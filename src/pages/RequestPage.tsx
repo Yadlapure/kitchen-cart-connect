@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -8,11 +8,28 @@ import Header from "@/components/Header";
 import ProductRequestForm from "@/components/ProductRequestForm";
 import ProductCard from "@/components/ProductCard";
 import { Product, useApp } from "@/context/AppContext";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
 
 const RequestPage = () => {
   const { cart, addToCart, clearCart, selectedMerchant, merchants, setSelectedMerchant, addOrder } = useApp();
   const [requestItems, setRequestItems] = useState<Product[]>([]);
+  const [availableItems, setAvailableItems] = useState<Product[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
+
+  // Sample available items - this would typically come from an API
+  useEffect(() => {
+    const sampleItems: Product[] = [
+      { id: "item-1", name: "Kitchen Knife", description: "8-inch stainless steel chef knife", quantity: 1, price: 899 },
+      { id: "item-2", name: "Cooking Pot", description: "5L non-stick cooking pot", quantity: 1, price: 1299 },
+      { id: "item-3", name: "Mixing Bowl", description: "Large stainless steel mixing bowl", quantity: 1, price: 599 },
+      { id: "item-4", name: "Spatula", description: "Silicone spatula for cooking", quantity: 1, price: 249 },
+      { id: "item-5", name: "Cutting Board", description: "Wooden cutting board", quantity: 1, price: 499 },
+      { id: "item-6", name: "Measuring Cup Set", description: "Set of measuring cups", quantity: 1, price: 399 }
+    ];
+    setAvailableItems(sampleItems);
+  }, []);
 
   const handleAddItem = (product: Product) => {
     setRequestItems([...requestItems, product]);
@@ -58,6 +75,15 @@ const RequestPage = () => {
     navigate('/orders');
   };
 
+  const filteredAvailableItems = availableItems.filter(item => 
+    item.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleAddAvailableItemToCart = (product: Product) => {
+    addToCart(product);
+    toast.success(`Added ${product.name} to cart`);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
@@ -93,6 +119,48 @@ const RequestPage = () => {
                 </CardContent>
               </Card>
             </div>
+            
+            {/* Available Items Section */}
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle>Available Items</CardTitle>
+                <div className="relative mt-2">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+                  <Input
+                    placeholder="Search items..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+              </CardHeader>
+              <CardContent className="max-h-60 overflow-y-auto">
+                <div className="space-y-2">
+                  {filteredAvailableItems.length > 0 ? (
+                    filteredAvailableItems.map((item) => (
+                      <div key={item.id} className="p-2 border rounded-md">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium">{item.name}</p>
+                            <p className="text-sm text-gray-500">{item.description}</p>
+                            <p className="text-sm font-semibold">₹{item.price?.toFixed(2)}</p>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleAddAvailableItemToCart(item)}
+                          >
+                            Add
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-center py-4">No items match your search</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
             
             <ProductRequestForm onAdd={handleAddItem} />
             
@@ -149,7 +217,7 @@ const RequestPage = () => {
                 ) : (
                   <div className="space-y-4">
                     {cart.map((item) => (
-                      <ProductCard key={item.id} product={item} editable={false} />
+                      <ProductCard key={item.id} product={item} editable={true} />
                     ))}
                     
                     <div className="mt-6">

@@ -1,8 +1,9 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Product, useApp } from "@/context/AppContext";
+import { Trash2 } from "lucide-react";
 
 interface ProductCardProps {
   product: Product;
@@ -11,9 +12,14 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ product, editable = true, isOrderView = false }: ProductCardProps) => {
-  const { addToCart, updateQuantity } = useApp();
+  const { addToCart, updateQuantity, removeFromCart } = useApp();
   const [quantity, setQuantity] = useState(product.quantity || 1);
   const [name, setName] = useState(product.name);
+
+  // Ensure quantity state stays in sync with product props
+  useEffect(() => {
+    setQuantity(product.quantity || 1);
+  }, [product.quantity]);
 
   const handleAddToCart = () => {
     addToCart({
@@ -23,33 +29,53 @@ const ProductCard = ({ product, editable = true, isOrderView = false }: ProductC
   };
 
   const incrementQuantity = () => {
-    setQuantity(quantity + 1);
+    const newQuantity = quantity + 1;
+    setQuantity(newQuantity);
     if (!editable) {
-      updateQuantity(product.id, quantity + 1);
+      updateQuantity(product.id, newQuantity);
     }
   };
 
   const decrementQuantity = () => {
     if (quantity > 1) {
-      setQuantity(quantity - 1);
+      const newQuantity = quantity - 1;
+      setQuantity(newQuantity);
       if (!editable) {
-        updateQuantity(product.id, quantity - 1);
+        updateQuantity(product.id, newQuantity);
       }
     }
+  };
+
+  const handleQuantityChange = () => {
+    updateQuantity(product.id, quantity);
+  };
+
+  const handleRemoveItem = () => {
+    removeFromCart(product.id);
   };
 
   return (
     <Card className={`border ${isOrderView && product.updatedPrice ? 'border-kitchen-500' : ''}`}>
       <CardContent className="p-4">
         <div>
-          {editable ? (
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full mb-2 text-lg font-medium"
-              placeholder="Product name"
-            />
+          {editable && !isOrderView ? (
+            <div className="flex justify-between items-center mb-2">
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full text-lg font-medium"
+                placeholder="Product name"
+              />
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleRemoveItem}
+                className="text-red-500 hover:text-red-700 hover:bg-red-50"
+              >
+                <Trash2 size={18} />
+              </Button>
+            </div>
           ) : (
             <h3 className="mb-2 text-lg font-medium">{product.name}</h3>
           )}
@@ -86,6 +112,7 @@ const ProductCard = ({ product, editable = true, isOrderView = false }: ProductC
               <button 
                 onClick={decrementQuantity}
                 className="px-3 py-1 text-gray-600 border-r hover:bg-gray-100"
+                type="button"
               >
                 -
               </button>
@@ -93,12 +120,21 @@ const ProductCard = ({ product, editable = true, isOrderView = false }: ProductC
               <button 
                 onClick={incrementQuantity}
                 className="px-3 py-1 text-gray-600 border-l hover:bg-gray-100"
+                type="button"
               >
                 +
               </button>
             </div>
             
-            {editable && (
+            {editable && !isOrderView ? (
+              <Button 
+                onClick={handleQuantityChange} 
+                variant="secondary"
+                className="text-white bg-kitchen-500 hover:bg-kitchen-600"
+              >
+                Update
+              </Button>
+            ) : editable && (
               <Button 
                 onClick={handleAddToCart} 
                 variant="secondary"
