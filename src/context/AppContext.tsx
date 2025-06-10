@@ -31,6 +31,7 @@ export interface Order {
   estimatedDeliveryTime?: string;
   paymentMethod?: 'COD' | 'Online' | 'UPI';
   total?: number;
+  quoteNotes?: string;
 }
 
 interface AppContextType {
