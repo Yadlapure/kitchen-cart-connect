@@ -2,8 +2,8 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Header from "@/components/Header";
+import DefaultItemSelector from "@/components/DefaultItemSelector";
 import ProductRequestForm from "@/components/ProductRequestForm";
 import ProductCard from "@/components/ProductCard";
 import MerchantCard from "@/components/MerchantCard";
@@ -15,6 +15,7 @@ import { toast } from "sonner";
 
 const RequestPage = () => {
   const { cart, merchants, selectedMerchant } = useAppSelector((state) => state.app);
+  const { user } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const [step, setStep] = useState<'add-products' | 'select-merchant' | 'review'>('add-products');
@@ -30,13 +31,14 @@ const RequestPage = () => {
   };
 
   const handleSubmitRequest = () => {
-    if (!selectedMerchant || cart.length === 0) {
+    if (!selectedMerchant || cart.length === 0 || !user) {
       toast.error("Please add items and select a merchant");
       return;
     }
 
     const newOrder = {
       id: `order-${Date.now()}`,
+      customerId: user.id,
       merchantId: selectedMerchant.id,
       products: [...cart],
       status: 'requested' as const,
@@ -88,6 +90,7 @@ const RequestPage = () => {
           <div className="lg:col-span-2">
             {step === 'add-products' && (
               <div className="space-y-6">
+                <DefaultItemSelector onAddItem={handleAddProduct} />
                 <ProductRequestForm onAdd={handleAddProduct} />
                 
                 {cart.length > 0 && (

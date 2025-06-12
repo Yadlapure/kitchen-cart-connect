@@ -17,6 +17,7 @@ import OrderDetailPage from "./pages/OrderDetailPage";
 import MerchantRequestsPage from "./pages/MerchantRequestsPage";
 import MerchantOrdersPage from "./pages/MerchantOrdersPage";
 import AdminDashboard from "./pages/AdminDashboard";
+import DeliveryBoyPage from "./pages/DeliveryBoyPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,6 +48,14 @@ const AppContent = () => {
           <Route path="/merchant/requests" element={<MerchantRequestsPage />} />
           <Route path="/merchant/orders" element={<MerchantOrdersPage />} />
           <Route path="/orders/:orderId" element={<OrderDetailPage />} />
+        </>
+      )}
+      
+      {/* Delivery Boy Routes */}
+      {user.role === 'delivery_boy' && (
+        <>
+          <Route path="/" element={<DeliveryBoyPage />} />
+          <Route path="/delivery" element={<DeliveryBoyPage />} />
         </>
       )}
       

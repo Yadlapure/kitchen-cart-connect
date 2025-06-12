@@ -1,12 +1,10 @@
 
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
-export type UserRole = 'customer' | 'merchant' | 'admin';
-
-export interface User {
+interface User {
   id: string;
   username: string;
-  role: UserRole;
+  role: 'customer' | 'merchant' | 'admin' | 'delivery_boy';
   name: string;
 }
 
@@ -39,13 +37,20 @@ const dummyUsers: Record<string, User> = {
     username: 'admin@test.com',
     role: 'admin',
     name: 'Admin User'
+  },
+  'delivery@test.com': {
+    id: '4',
+    username: 'delivery@test.com',
+    role: 'delivery_boy',
+    name: 'Raj Kumar'
   }
 };
 
 const dummyPasswords: Record<string, string> = {
   'customer@test.com': 'customer123',
   'merchant@test.com': 'merchant123',
-  'admin@test.com': 'admin123'
+  'admin@test.com': 'admin123',
+  'delivery@test.com': 'delivery123'
 };
 
 const authSlice = createSlice({

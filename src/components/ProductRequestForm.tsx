@@ -2,7 +2,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Product } from "@/store/appSlice";
 
 interface ProductRequestFormProps {
@@ -12,6 +13,7 @@ interface ProductRequestFormProps {
 const ProductRequestForm = ({ onAdd }: ProductRequestFormProps) => {
   const [name, setName] = useState("");
   const [quantity, setQuantity] = useState(1);
+  const [unit, setUnit] = useState<'gram' | 'kg' | 'number' | 'liter' | 'piece'>('piece');
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
 
@@ -25,6 +27,7 @@ const ProductRequestForm = ({ onAdd }: ProductRequestFormProps) => {
       name: name.trim(),
       description: description.trim() || undefined,
       quantity,
+      unit,
       price: price ? parseFloat(price) : undefined,
     };
     
@@ -33,12 +36,16 @@ const ProductRequestForm = ({ onAdd }: ProductRequestFormProps) => {
     // Reset form
     setName("");
     setQuantity(1);
+    setUnit('piece');
     setDescription("");
     setPrice("");
   };
 
   return (
     <Card>
+      <CardHeader>
+        <CardTitle>Add Custom Item</CardTitle>
+      </CardHeader>
       <CardContent className="p-4">
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
@@ -66,6 +73,39 @@ const ProductRequestForm = ({ onAdd }: ProductRequestFormProps) => {
             />
           </div>
           
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div>
+              <label htmlFor="quantity" className="block mb-1 text-sm font-medium text-gray-700">
+                Quantity
+              </label>
+              <Input
+                id="quantity"
+                type="number"
+                min="1"
+                value={quantity}
+                onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+              />
+            </div>
+            
+            <div>
+              <label htmlFor="unit" className="block mb-1 text-sm font-medium text-gray-700">
+                Unit
+              </label>
+              <Select value={unit} onValueChange={(value) => setUnit(value as any)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="piece">Piece</SelectItem>
+                  <SelectItem value="kg">Kilogram (kg)</SelectItem>
+                  <SelectItem value="gram">Gram</SelectItem>
+                  <SelectItem value="liter">Liter</SelectItem>
+                  <SelectItem value="number">Number</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
           <div className="mb-4">
             <label htmlFor="price" className="block mb-1 text-sm font-medium text-gray-700">
               Expected Price (Optional)
@@ -81,41 +121,11 @@ const ProductRequestForm = ({ onAdd }: ProductRequestFormProps) => {
             />
           </div>
           
-          <div className="mb-4">
-            <label htmlFor="quantity" className="block mb-1 text-sm font-medium text-gray-700">
-              Quantity
-            </label>
-            <div className="flex items-center border rounded-md">
-              <button 
-                type="button"
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="px-3 py-2 text-gray-600 border-r hover:bg-gray-100"
-              >
-                -
-              </button>
-              <input
-                type="number"
-                id="quantity"
-                value={quantity}
-                onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                className="w-16 px-3 py-2 text-center border-0 focus:ring-0 focus:outline-none"
-                min="1"
-              />
-              <button 
-                type="button"
-                onClick={() => setQuantity(quantity + 1)}
-                className="px-3 py-1 text-gray-600 border-l hover:bg-gray-100"
-              >
-                +
-              </button>
-            </div>
-          </div>
-          
           <Button 
             type="submit" 
             className="w-full text-white bg-kitchen-500 hover:bg-kitchen-600"
           >
-            Add Item to Request List
+            Add Custom Item
           </Button>
         </form>
       </CardContent>
