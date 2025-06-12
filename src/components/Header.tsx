@@ -1,15 +1,15 @@
-
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { useApp } from "@/context/AppContext";
-import { useAuth } from "@/context/AuthContext";
+import { useAppSelector, useAppDispatch } from "@/hooks/redux";
+import { logout } from "@/store/authSlice";
 import { FaShoppingCart, FaBars, FaSignOutAlt } from 'react-icons/fa';
 
 const Header = () => {
   const navigate = useNavigate();
-  const { cart } = useApp();
-  const { user, logout } = useAuth();
+  const dispatch = useAppDispatch();
+  const { cart } = useAppSelector((state) => state.app);
+  const { user } = useAppSelector((state) => state.auth);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const toggleMenu = () => {
@@ -17,10 +17,10 @@ const Header = () => {
   };
 
   const handleLogout = () => {
-    logout();
+    dispatch(logout());
   };
 
-  const getNavLinks = () => {
+  function getNavLinks() {
     switch (user?.role) {
       case 'customer':
         return (
@@ -48,9 +48,9 @@ const Header = () => {
       default:
         return null;
     }
-  };
+  }
 
-  const getMobileNavLinks = () => {
+  function getMobileNavLinks() {
     switch (user?.role) {
       case 'customer':
         return (
@@ -78,7 +78,7 @@ const Header = () => {
       default:
         return null;
     }
-  };
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full bg-white border-b shadow-sm">

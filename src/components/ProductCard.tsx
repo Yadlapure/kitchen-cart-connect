@@ -1,8 +1,9 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Product, useApp } from "@/context/AppContext";
+import { Product } from "@/store/appSlice";
+import { useAppDispatch } from "@/hooks/redux";
+import { addToCart, updateQuantity, removeFromCart } from "@/store/appSlice";
 import { FaTrash } from 'react-icons/fa';
 
 interface ProductCardProps {
@@ -12,7 +13,7 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ product, editable = true, isOrderView = false }: ProductCardProps) => {
-  const { addToCart, updateQuantity, removeFromCart } = useApp();
+  const dispatch = useAppDispatch();
   const [quantity, setQuantity] = useState(product.quantity || 1);
   const [name, setName] = useState(product.name);
 
@@ -22,17 +23,17 @@ const ProductCard = ({ product, editable = true, isOrderView = false }: ProductC
   }, [product.quantity]);
 
   const handleAddToCart = () => {
-    addToCart({
+    dispatch(addToCart({
       ...product,
       quantity
-    });
+    }));
   };
 
   const incrementQuantity = () => {
     const newQuantity = quantity + 1;
     setQuantity(newQuantity);
     if (!editable) {
-      updateQuantity(product.id, newQuantity);
+      dispatch(updateQuantity({ productId: product.id, quantity: newQuantity }));
     }
   };
 
@@ -41,17 +42,17 @@ const ProductCard = ({ product, editable = true, isOrderView = false }: ProductC
       const newQuantity = quantity - 1;
       setQuantity(newQuantity);
       if (!editable) {
-        updateQuantity(product.id, newQuantity);
+        dispatch(updateQuantity({ productId: product.id, quantity: newQuantity }));
       }
     }
   };
 
   const handleQuantityChange = () => {
-    updateQuantity(product.id, quantity);
+    dispatch(updateQuantity({ productId: product.id, quantity }));
   };
 
   const handleRemoveItem = () => {
-    removeFromCart(product.id);
+    dispatch(removeFromCart(product.id));
   };
 
   return (

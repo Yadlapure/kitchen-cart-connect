@@ -1,18 +1,18 @@
-
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useApp } from "@/context/AppContext";
-import { useAuth } from "@/context/AuthContext";
+import { useAppSelector, useAppDispatch } from "@/hooks/redux";
+import { setSelectedMerchant } from "@/store/appSlice";
 import Header from "@/components/Header";
 import MerchantCard from "@/components/MerchantCard";
 
 const Index = () => {
-  const { merchants, setSelectedMerchant } = useApp();
-  const { user } = useAuth();
+  const { merchants } = useAppSelector((state) => state.app);
+  const { user } = useAppSelector((state) => state.auth);
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
   const handleSelectMerchant = (merchant: typeof merchants[0]) => {
-    setSelectedMerchant(merchant);
+    dispatch(setSelectedMerchant(merchant));
     navigate('/request');
   };
 
