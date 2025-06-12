@@ -1,16 +1,24 @@
 
+import { useEffect } from "react";
 import Header from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "@/context/AppContext";
+import { useAuth } from "@/context/AuthContext";
 
 const MerchantRequestsPage = () => {
-  const { orders, merchants, currentUser } = useApp();
+  const { orders } = useApp();
+  const { user } = useAuth();
   const navigate = useNavigate();
   
-  if (currentUser === 'customer') {
-    navigate('/');
+  useEffect(() => {
+    if (user?.role !== 'merchant') {
+      navigate('/');
+    }
+  }, [user, navigate]);
+
+  if (user?.role !== 'merchant') {
     return null;
   }
 

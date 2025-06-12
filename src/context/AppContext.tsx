@@ -35,8 +35,6 @@ export interface Order {
 }
 
 interface AppContextType {
-  currentUser: 'customer' | 'merchant';
-  setCurrentUser: (user: 'customer' | 'merchant') => void;
   cart: Product[];
   addToCart: (product: Product) => void;
   removeFromCart: (productId: string) => void;
@@ -81,14 +79,12 @@ const sampleMerchants: Merchant[] = [
 ];
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
-  const [currentUser, setCurrentUser] = useState<'customer' | 'merchant'>('customer');
   const [cart, setCart] = useState<Product[]>([]);
   const [merchants] = useState<Merchant[]>(sampleMerchants);
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedMerchant, setSelectedMerchant] = useState<Merchant | null>(null);
 
   const addToCart = (product: Product) => {
-    // Check if product already exists
     const existingProduct = cart.find(item => item.id === product.id);
     if (existingProduct) {
       updateQuantity(product.id, existingProduct.quantity + product.quantity);
@@ -132,8 +128,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AppContext.Provider
       value={{
-        currentUser,
-        setCurrentUser,
         cart,
         addToCart,
         removeFromCart,

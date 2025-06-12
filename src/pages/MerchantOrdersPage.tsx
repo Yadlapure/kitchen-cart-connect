@@ -1,19 +1,26 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Header from "@/components/Header";
 import OrderStatusBadge from "@/components/OrderStatusBadge";
 import { useApp } from "@/context/AppContext";
+import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 const MerchantOrdersPage = () => {
-  const { orders, currentUser } = useApp();
+  const { orders } = useApp();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("active");
   const navigate = useNavigate();
   
-  if (currentUser === 'customer') {
-    navigate('/');
+  useEffect(() => {
+    if (user?.role !== 'merchant') {
+      navigate('/');
+    }
+  }, [user, navigate]);
+
+  if (user?.role !== 'merchant') {
     return null;
   }
 
