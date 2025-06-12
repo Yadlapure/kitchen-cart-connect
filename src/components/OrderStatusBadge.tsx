@@ -2,7 +2,7 @@
 import { Badge } from "@/components/ui/badge";
 
 interface OrderStatusBadgeProps {
-  status: 'requested' | 'quoted' | 'confirmed' | 'processing' | 'delivering' | 'completed';
+  status: 'requested' | 'quoted' | 'confirmed' | 'processing' | 'delivering' | 'completed' | 'cancelled';
 }
 
 const OrderStatusBadge = ({ status }: OrderStatusBadgeProps) => {
@@ -20,6 +20,8 @@ const OrderStatusBadge = ({ status }: OrderStatusBadgeProps) => {
         return { label: 'Out for Delivery', variant: 'default' as const, className: 'bg-orange-500' };
       case 'completed':
         return { label: 'Completed', variant: 'default' as const, className: 'bg-green-500' };
+      case 'cancelled':
+        return { label: 'Cancelled', variant: 'destructive' as const };
       default:
         return { label: status, variant: 'outline' as const };
     }

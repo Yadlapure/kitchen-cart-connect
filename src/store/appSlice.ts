@@ -39,7 +39,7 @@ export interface Order {
   merchantId: string;
   deliveryBoyId?: string;
   products: Product[];
-  status: 'requested' | 'quoted' | 'confirmed' | 'processing' | 'out_for_delivery' | 'delivered' | 'cancelled';
+  status: 'requested' | 'quoted' | 'confirmed' | 'processing' | 'delivering' | 'completed' | 'cancelled';
   createdAt: Date;
   updatedAt: Date;
   estimatedDeliveryTime?: string;
@@ -209,7 +209,7 @@ const appSlice = createSlice({
         Object.assign(order, updates, { updatedAt: new Date() });
         
         // Auto-calculate commission when total is updated
-        if (updates.total && updates.status === 'delivered') {
+        if (updates.total && updates.status === 'completed') {
           order.commission = updates.total * state.commissionRate;
         }
       }
@@ -237,12 +237,12 @@ const appSlice = createSlice({
         deliveryBoy.currentOrders.push(orderId);
       }
     },
-    updateDeliveryStatus: (state, action: PayloadAction<{ orderId: string; status: 'delivered' }>) => {
+    updateDeliveryStatus: (state, action: PayloadAction<{ orderId: string; status: 'completed' }>) => {
       const { orderId, status } = action.payload;
       const order = state.orders.find(o => o.id === orderId);
       
-      if (order && status === 'delivered') {
-        order.status = 'delivered';
+      if (order && status === 'completed') {
+        order.status = 'completed';
         order.updatedAt = new Date();
         
         // Calculate commission automatically

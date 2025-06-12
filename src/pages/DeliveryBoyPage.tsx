@@ -26,11 +26,11 @@ const DeliveryBoyPage = () => {
   }
 
   const myOrders = orders.filter(order => 
-    order.deliveryBoyId === user.id && order.status === 'out_for_delivery'
+    order.deliveryBoyId === user.id && order.status === 'delivering'
   );
 
   const handleMarkDelivered = (orderId: string) => {
-    dispatch(updateDeliveryStatus({ orderId, status: 'delivered' }));
+    dispatch(updateDeliveryStatus({ orderId, status: 'completed' }));
     toast.success("Order marked as delivered!");
   };
 
