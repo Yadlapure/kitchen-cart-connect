@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -66,6 +65,10 @@ const OrderDetailPage = () => {
       }
     }));
     toast.success("Quote submitted successfully!");
+  };
+
+  const handlePaymentMethodChange = (value: string) => {
+    setPaymentMethod(value as "COD" | "Online" | "UPI");
   };
 
   const canManageOrder = user?.role === 'merchant';
@@ -174,7 +177,7 @@ const OrderDetailPage = () => {
                     <label className="block text-sm font-medium mb-1">
                       Payment Method
                     </label>
-                    <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                    <Select value={paymentMethod} onValueChange={handlePaymentMethodChange}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
