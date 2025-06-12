@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Product, useApp } from "@/context/AppContext";
-import { Trash2 } from "lucide-react";
+import { FaTrash } from 'react-icons/fa';
 
 interface ProductCardProps {
   product: Product;
@@ -73,7 +73,7 @@ const ProductCard = ({ product, editable = true, isOrderView = false }: ProductC
                 onClick={handleRemoveItem}
                 className="text-red-500 hover:text-red-700 hover:bg-red-50"
               >
-                <Trash2 size={18} />
+                <FaTrash size={18} />
               </Button>
             </div>
           ) : (

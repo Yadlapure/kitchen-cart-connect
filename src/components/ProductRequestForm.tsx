@@ -13,6 +13,7 @@ const ProductRequestForm = ({ onAdd }: ProductRequestFormProps) => {
   const [name, setName] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [description, setDescription] = useState("");
+  const [price, setPrice] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,6 +25,7 @@ const ProductRequestForm = ({ onAdd }: ProductRequestFormProps) => {
       name: name.trim(),
       description: description.trim() || undefined,
       quantity,
+      price: price ? parseFloat(price) : undefined,
     };
     
     onAdd(newProduct);
@@ -32,6 +34,7 @@ const ProductRequestForm = ({ onAdd }: ProductRequestFormProps) => {
     setName("");
     setQuantity(1);
     setDescription("");
+    setPrice("");
   };
 
   return (
@@ -64,6 +67,21 @@ const ProductRequestForm = ({ onAdd }: ProductRequestFormProps) => {
           </div>
           
           <div className="mb-4">
+            <label htmlFor="price" className="block mb-1 text-sm font-medium text-gray-700">
+              Expected Price (Optional)
+            </label>
+            <Input
+              id="price"
+              type="number"
+              step="0.01"
+              min="0"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              placeholder="e.g., 300"
+            />
+          </div>
+          
+          <div className="mb-4">
             <label htmlFor="quantity" className="block mb-1 text-sm font-medium text-gray-700">
               Quantity
             </label>
@@ -86,7 +104,7 @@ const ProductRequestForm = ({ onAdd }: ProductRequestFormProps) => {
               <button 
                 type="button"
                 onClick={() => setQuantity(quantity + 1)}
-                className="px-3 py-2 text-gray-600 border-l hover:bg-gray-100"
+                className="px-3 py-1 text-gray-600 border-l hover:bg-gray-100"
               >
                 +
               </button>

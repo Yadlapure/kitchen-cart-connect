@@ -2,11 +2,13 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useApp } from "@/context/AppContext";
+import { useAuth } from "@/context/AuthContext";
 import Header from "@/components/Header";
 import MerchantCard from "@/components/MerchantCard";
 
 const Index = () => {
-  const { merchants, setSelectedMerchant, currentUser } = useApp();
+  const { merchants, setSelectedMerchant } = useApp();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   const handleSelectMerchant = (merchant: typeof merchants[0]) => {
@@ -14,9 +16,14 @@ const Index = () => {
     navigate('/request');
   };
 
-  // If user is a merchant, redirect to merchant dashboard
-  if (currentUser === 'merchant') {
+  // If user is not a customer, redirect to appropriate page
+  if (user?.role === 'merchant') {
     navigate('/merchant/requests');
+    return null;
+  }
+
+  if (user?.role === 'admin') {
+    navigate('/admin/dashboard');
     return null;
   }
 

@@ -9,7 +9,7 @@ import ProductRequestForm from "@/components/ProductRequestForm";
 import ProductCard from "@/components/ProductCard";
 import { Product, useApp } from "@/context/AppContext";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { FaSearch } from 'react-icons/fa';
 
 const RequestPage = () => {
   const { cart, addToCart, clearCart, selectedMerchant, merchants, setSelectedMerchant, addOrder } = useApp();
@@ -125,7 +125,7 @@ const RequestPage = () => {
               <CardHeader>
                 <CardTitle>Available Items</CardTitle>
                 <div className="relative mt-2">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+                  <FaSearch className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
                   <Input
                     placeholder="Search items..."
                     value={searchTerm}
@@ -180,7 +180,10 @@ const RequestPage = () => {
                   {requestItems.map((item) => (
                     <div key={item.id} className="p-2 border rounded-md">
                       <div className="flex items-center justify-between">
-                        <span>{item.name} (×{item.quantity})</span>
+                        <div>
+                          <span className="font-medium">{item.name} (×{item.quantity})</span>
+                          {item.price && <span className="text-sm text-gray-500 ml-2">₹{item.price}</span>}
+                        </div>
                         <Button 
                           variant="ghost" 
                           size="sm"
