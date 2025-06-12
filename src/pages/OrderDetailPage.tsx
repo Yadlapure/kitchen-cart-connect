@@ -9,13 +9,15 @@ import Header from "@/components/Header";
 import OrderStatusBadge from "@/components/OrderStatusBadge";
 import ProductCard from "@/components/ProductCard";
 import { useApp } from "@/context/AppContext";
+import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { useState } from "react";
 
 const OrderDetailPage = () => {
   const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
-  const { orders, merchants, updateOrder, currentUser } = useApp();
+  const { orders, merchants, updateOrder } = useApp();
+  const { user } = useAuth();
   const [selectedPayment, setSelectedPayment] = useState<'COD' | 'Online' | 'UPI'>('COD');
   const [quoteItems, setQuoteItems] = useState<any[]>([]);
   const [quoteNotes, setQuoteNotes] = useState('');
@@ -114,7 +116,7 @@ const OrderDetailPage = () => {
   };
   
   const renderActions = () => {
-    if (currentUser === 'customer') {
+    if (user?.role === 'customer') {
       if (order.status === 'quoted') {
         return (
           <div className="p-6 bg-white border rounded-lg shadow-sm">
