@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import Header from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { useAppSelector } from "@/hooks/redux";
 
@@ -21,7 +22,19 @@ const MerchantRequestsPage = () => {
     return null;
   }
 
-  const requestedOrders = orders.filter((order) => order.status === 'requested');
+  // Filter orders where this merchant is selected and request is active
+  const requestedOrders = orders.filter((order) => 
+    order.selectedMerchants?.includes(user.id) && 
+    (order.status === 'requested' || (order.status === 'quoted' && !order.merchantQuotes.find(q => q.merchantId === user.id)))
+  );
+
+  const getMerchantQuoteStatus = (order: any) => {
+    const merchantQuote = order.merchantQuotes?.find((q: any) => q.merchantId === user.id);
+    if (merchantQuote) {
+      return 'Quote Submitted';
+    }
+    return 'Pending Quote';
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -46,9 +59,16 @@ const MerchantRequestsPage = () => {
                     <CardTitle className="text-lg">
                       Request #{order.id.split('-')[1]}
                     </CardTitle>
-                    <span className="px-2 py-1 text-sm text-white rounded-full bg-kitchen-500">
-                      New
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={getMerchantQuoteStatus(order) === 'Quote Submitted' ? 'default' : 'outline'}>
+                        {getMerchantQuoteStatus(order)}
+                      </Badge>
+                      {order.selectedMerchants && order.selectedMerchants.length > 1 && (
+                        <Badge variant="secondary">
+                          Multi-merchant ({order.selectedMerchants.length} merchants)
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="p-6">
@@ -67,20 +87,25 @@ const MerchantRequestsPage = () => {
                   </div>
                   
                   <h4 className="mb-2 font-medium">Items Requested:</h4>
-                  <ul className="mb-4 space-y-1">
+                  <div className="space-y-2 mb-4">
                     {order.products.map((product) => (
-                      <li key={product.id} className="flex items-center justify-between py-1 border-b last:border-0">
-                        <span>{product.name}</span>
-                        <span className="font-medium">×{product.quantity}</span>
-                      </li>
+                      <div key={product.id} className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded">
+                        <div>
+                          <span className="font-medium">{product.name}</span>
+                          {product.description && (
+                            <p className="text-sm text-gray-600">{product.description}</p>
+                          )}
+                        </div>
+                        <span className="font-medium">{product.quantity} {product.unit}</span>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                   
                   <Button 
                     className="w-full text-white bg-kitchen-500 hover:bg-kitchen-600"
                     onClick={() => navigate(`/orders/${order.id}`)}
                   >
-                    View Request Details
+                    {getMerchantQuoteStatus(order) === 'Quote Submitted' ? 'View/Edit Quote' : 'Create Quote'}
                   </Button>
                 </CardContent>
               </Card>

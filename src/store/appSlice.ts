@@ -1,4 +1,3 @@
-
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 // Types
@@ -33,12 +32,25 @@ export interface Merchant {
   deliveryTime: string;
 }
 
+export interface MerchantQuote {
+  merchantId: string;
+  products: Product[];
+  total: number;
+  estimatedDeliveryTime?: string;
+  quoteNotes?: string;
+  paymentMethod?: 'COD' | 'Online' | 'UPI';
+  submittedAt: Date;
+}
+
 export interface Order {
   id: string;
   customerId: string;
-  merchantId: string;
+  merchantId?: string;
+  selectedMerchants: string[];
   deliveryBoyId?: string;
   products: Product[];
+  merchantQuotes: MerchantQuote[];
+  selectedQuote?: string;
   status: 'requested' | 'quoted' | 'confirmed' | 'processing' | 'delivering' | 'completed' | 'cancelled';
   createdAt: Date;
   updatedAt: Date;
@@ -65,7 +77,7 @@ interface AppState {
   orders: Order[];
   deliveryBoys: DeliveryBoy[];
   defaultItems: DefaultItem[];
-  selectedMerchant: Merchant | null;
+  selectedMerchants: string[];
   commissionRate: number;
 }
 
@@ -166,7 +178,7 @@ const initialState: AppState = {
   orders: [],
   deliveryBoys: sampleDeliveryBoys,
   defaultItems: defaultKitchenItems,
-  selectedMerchant: null,
+  selectedMerchants: [],
   commissionRate: 0.05, // 5% commission
 };
 
@@ -199,6 +211,17 @@ const appSlice = createSlice({
     clearCart: (state) => {
       state.cart = [];
     },
+    addSelectedMerchant: (state, action: PayloadAction<string>) => {
+      if (!state.selectedMerchants.includes(action.payload)) {
+        state.selectedMerchants.push(action.payload);
+      }
+    },
+    removeSelectedMerchant: (state, action: PayloadAction<string>) => {
+      state.selectedMerchants = state.selectedMerchants.filter(id => id !== action.payload);
+    },
+    clearSelectedMerchants: (state) => {
+      state.selectedMerchants = [];
+    },
     addOrder: (state, action: PayloadAction<Order>) => {
       state.orders.push(action.payload);
     },
@@ -214,11 +237,58 @@ const appSlice = createSlice({
         }
       }
     },
-    verifyProduct: (state, action: PayloadAction<{ orderId: string; productId: string; price: number; isAvailable: boolean; notes?: string }>) => {
-      const { orderId, productId, price, isAvailable, notes } = action.payload;
+    submitMerchantQuote: (state, action: PayloadAction<{ orderId: string; merchantQuote: MerchantQuote }>) => {
+      const { orderId, merchantQuote } = action.payload;
       const order = state.orders.find(o => o.id === orderId);
       if (order) {
-        const product = order.products.find(p => p.id === productId);
+        const existingQuoteIndex = order.merchantQuotes.findIndex(q => q.merchantId === merchantQuote.merchantId);
+        if (existingQuoteIndex >= 0) {
+          order.merchantQuotes[existingQuoteIndex] = merchantQuote;
+        } else {
+          order.merchantQuotes.push(merchantQuote);
+        }
+        
+        // Check if all selected merchants have submitted quotes
+        if (order.merchantQuotes.length === order.selectedMerchants.length) {
+          order.status = 'quoted';
+        }
+        order.updatedAt = new Date();
+      }
+    },
+    selectMerchantQuote: (state, action: PayloadAction<{ orderId: string; merchantId: string }>) => {
+      const { orderId, merchantId } = action.payload;
+      const order = state.orders.find(o => o.id === orderId);
+      if (order) {
+        const selectedQuote = order.merchantQuotes.find(q => q.merchantId === merchantId);
+        if (selectedQuote) {
+          order.selectedQuote = merchantId;
+          order.merchantId = merchantId;
+          order.total = selectedQuote.total;
+          order.estimatedDeliveryTime = selectedQuote.estimatedDeliveryTime;
+          order.quoteNotes = selectedQuote.quoteNotes;
+          order.paymentMethod = selectedQuote.paymentMethod;
+          order.status = 'confirmed';
+          order.updatedAt = new Date();
+        }
+      }
+    },
+    verifyProduct: (state, action: PayloadAction<{ orderId: string; merchantId: string; productId: string; price: number; isAvailable: boolean; notes?: string }>) => {
+      const { orderId, merchantId, productId, price, isAvailable, notes } = action.payload;
+      const order = state.orders.find(o => o.id === orderId);
+      if (order) {
+        // Find existing quote or create new one
+        let merchantQuote = order.merchantQuotes.find(q => q.merchantId === merchantId);
+        if (!merchantQuote) {
+          merchantQuote = {
+            merchantId,
+            products: [...order.products.map(p => ({ ...p, isVerified: false }))],
+            total: 0,
+            submittedAt: new Date()
+          };
+          order.merchantQuotes.push(merchantQuote);
+        }
+        
+        const product = merchantQuote.products.find(p => p.id === productId);
         if (product) {
           product.updatedPrice = price;
           product.isAvailable = isAvailable;
@@ -259,9 +329,6 @@ const appSlice = createSlice({
         }
       }
     },
-    setSelectedMerchant: (state, action: PayloadAction<Merchant | null>) => {
-      state.selectedMerchant = action.payload;
-    },
   },
 });
 
@@ -270,12 +337,16 @@ export const {
   removeFromCart,
   updateQuantity,
   clearCart,
+  addSelectedMerchant,
+  removeSelectedMerchant,
+  clearSelectedMerchants,
   addOrder,
   updateOrder,
+  submitMerchantQuote,
+  selectMerchantQuote,
   verifyProduct,
   assignDeliveryBoy,
   updateDeliveryStatus,
-  setSelectedMerchant,
 } = appSlice.actions;
 
 export default appSlice.reducer;
