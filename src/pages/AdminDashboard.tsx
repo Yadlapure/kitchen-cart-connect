@@ -3,11 +3,11 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
-import { useApp } from '@/context/AppContext';
+import { useAppSelector } from '@/hooks/redux';
 import { FaRupeeSign, FaChartLine, FaUsers, FaStore } from 'react-icons/fa';
 
 const AdminDashboard = () => {
-  const { orders, merchants } = useApp();
+  const { orders, merchants } = useAppSelector((state) => state.app);
   const [totalCommission, setTotalCommission] = useState(0);
   const [totalOrders, setTotalOrders] = useState(0);
   const [recentTransactions, setRecentTransactions] = useState<any[]>([]);

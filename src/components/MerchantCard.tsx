@@ -1,6 +1,6 @@
 
 import { Card, CardContent } from "@/components/ui/card";
-import { Merchant } from "@/context/AppContext";
+import { Merchant } from "@/store/appSlice";
 import { Button } from "@/components/ui/button";
 
 interface MerchantCardProps {

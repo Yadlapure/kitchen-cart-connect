@@ -4,12 +4,11 @@ import Header from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { useApp } from "@/context/AppContext";
-import { useAuth } from "@/context/AuthContext";
+import { useAppSelector } from "@/hooks/redux";
 
 const MerchantRequestsPage = () => {
-  const { orders } = useApp();
-  const { user } = useAuth();
+  const { orders } = useAppSelector((state) => state.app);
+  const { user } = useAppSelector((state) => state.auth);
   const navigate = useNavigate();
   
   useEffect(() => {

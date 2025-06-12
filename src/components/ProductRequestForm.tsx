@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Product } from "@/context/AppContext";
+import { Product } from "@/store/appSlice";
 
 interface ProductRequestFormProps {
   onAdd: (product: Product) => void;

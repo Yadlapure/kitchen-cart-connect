@@ -4,13 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Header from "@/components/Header";
 import OrderStatusBadge from "@/components/OrderStatusBadge";
-import { useApp } from "@/context/AppContext";
-import { useAuth } from "@/context/AuthContext";
+import { useAppSelector } from "@/hooks/redux";
 import { useNavigate } from "react-router-dom";
 
 const MerchantOrdersPage = () => {
-  const { orders } = useApp();
-  const { user } = useAuth();
+  const { orders } = useAppSelector((state) => state.app);
+  const { user } = useAppSelector((state) => state.auth);
   const [activeTab, setActiveTab] = useState("active");
   const navigate = useNavigate();
   

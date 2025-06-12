@@ -1,240 +1,262 @@
 
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Header from "@/components/Header";
 import ProductRequestForm from "@/components/ProductRequestForm";
 import ProductCard from "@/components/ProductCard";
-import { Product, useApp } from "@/context/AppContext";
-import { Input } from "@/components/ui/input";
-import { FaSearch } from 'react-icons/fa';
+import MerchantCard from "@/components/MerchantCard";
+import { useAppSelector, useAppDispatch } from "@/hooks/redux";
+import { addToCart, clearCart, setSelectedMerchant, addOrder } from "@/store/appSlice";
+import { Product, Merchant } from "@/store/appSlice";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 const RequestPage = () => {
-  const { cart, addToCart, clearCart, selectedMerchant, merchants, setSelectedMerchant, addOrder } = useApp();
-  const [requestItems, setRequestItems] = useState<Product[]>([]);
-  const [availableItems, setAvailableItems] = useState<Product[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
+  const { cart, merchants, selectedMerchant } = useAppSelector((state) => state.app);
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const [step, setStep] = useState<'add-products' | 'select-merchant' | 'review'>('add-products');
 
-  // Sample available items - this would typically come from an API
-  useEffect(() => {
-    const sampleItems: Product[] = [
-      { id: "item-1", name: "Kitchen Knife", description: "8-inch stainless steel chef knife", quantity: 1, price: 899 },
-      { id: "item-2", name: "Cooking Pot", description: "5L non-stick cooking pot", quantity: 1, price: 1299 },
-      { id: "item-3", name: "Mixing Bowl", description: "Large stainless steel mixing bowl", quantity: 1, price: 599 },
-      { id: "item-4", name: "Spatula", description: "Silicone spatula for cooking", quantity: 1, price: 249 },
-      { id: "item-5", name: "Cutting Board", description: "Wooden cutting board", quantity: 1, price: 499 },
-      { id: "item-6", name: "Measuring Cup Set", description: "Set of measuring cups", quantity: 1, price: 399 }
-    ];
-    setAvailableItems(sampleItems);
-  }, []);
-
-  const handleAddItem = (product: Product) => {
-    setRequestItems([...requestItems, product]);
+  const handleAddProduct = (product: Product) => {
+    dispatch(addToCart(product));
+    toast.success(`${product.name} added to your request`);
   };
 
-  const handleAddAllToCart = () => {
-    requestItems.forEach((item) => {
-      addToCart(item);
-    });
-    setRequestItems([]);
-    toast.success("All items added to cart");
+  const handleMerchantSelect = (merchant: Merchant) => {
+    dispatch(setSelectedMerchant(merchant));
+    setStep('review');
   };
 
   const handleSubmitRequest = () => {
-    if (cart.length === 0 && requestItems.length === 0) {
-      toast.error("Please add items before submitting");
+    if (!selectedMerchant || cart.length === 0) {
+      toast.error("Please add items and select a merchant");
       return;
     }
 
-    // Add any remaining request items to cart
-    if (requestItems.length > 0) {
-      handleAddAllToCart();
-    }
-
-    if (!selectedMerchant) {
-      toast.error("Please select a merchant");
-      return;
-    }
-
-    // Create new order
     const newOrder = {
       id: `order-${Date.now()}`,
       merchantId: selectedMerchant.id,
       products: [...cart],
       status: 'requested' as const,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
 
-    addOrder(newOrder);
-    clearCart();
-    toast.success("Request submitted successfully");
+    dispatch(addOrder(newOrder));
+    dispatch(clearCart());
+    dispatch(setSelectedMerchant(null));
+    
+    toast.success("Request submitted successfully!");
     navigate('/orders');
   };
 
-  const filteredAvailableItems = availableItems.filter(item => 
-    item.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const handleAddAvailableItemToCart = (product: Product) => {
-    addToCart(product);
-    toast.success(`Added ${product.name} to cart`);
-  };
+  const totalItems = cart.reduce((total, product) => total + product.quantity, 0);
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
       
       <main className="container px-4 py-8 mx-auto sm:px-6">
-        <h1 className="mb-6 text-2xl font-bold">Create Item Request</h1>
+        <h1 className="mb-6 text-2xl font-bold">Request Kitchen Items</h1>
         
-        <div className="grid gap-6 md:grid-cols-12">
-          {/* Form Section */}
-          <div className="md:col-span-5">
-            <div className="mb-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Select Merchant</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {merchants.map((merchant) => (
-                      <div 
-                        key={merchant.id} 
-                        className={`p-3 border rounded-md cursor-pointer ${
-                          selectedMerchant?.id === merchant.id ? 'border-kitchen-500 bg-kitchen-50' : ''
-                        }`}
-                        onClick={() => setSelectedMerchant(merchant)}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="font-medium">{merchant.name}</span>
-                          <span className="text-sm text-gray-500">{merchant.deliveryTime}</span>
-                        </div>
+        {/* Progress Steps */}
+        <div className="flex mb-8 space-x-4">
+          <div className={`flex-1 p-3 rounded-lg border-2 ${
+            step === 'add-products' ? 'border-kitchen-500 bg-kitchen-50' : 'border-gray-200'
+          }`}>
+            <h3 className="font-medium">1. Add Items</h3>
+            <p className="text-sm text-gray-600">List the kitchen items you need</p>
+          </div>
+          <div className={`flex-1 p-3 rounded-lg border-2 ${
+            step === 'select-merchant' ? 'border-kitchen-500 bg-kitchen-50' : 'border-gray-200'
+          }`}>
+            <h3 className="font-medium">2. Select Merchant</h3>
+            <p className="text-sm text-gray-600">Choose a merchant to fulfill your request</p>
+          </div>
+          <div className={`flex-1 p-3 rounded-lg border-2 ${
+            step === 'review' ? 'border-kitchen-500 bg-kitchen-50' : 'border-gray-200'
+          }`}>
+            <h3 className="font-medium">3. Review & Submit</h3>
+            <p className="text-sm text-gray-600">Review your request and submit</p>
+          </div>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-3">
+          {/* Main Content */}
+          <div className="lg:col-span-2">
+            {step === 'add-products' && (
+              <div className="space-y-6">
+                <ProductRequestForm onAdd={handleAddProduct} />
+                
+                {cart.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Your Request List ({totalItems} items)</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {cart.map((product) => (
+                          <ProductCard 
+                            key={product.id} 
+                            product={product} 
+                            editable={false}
+                          />
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-            
-            {/* Available Items Section */}
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle>Available Items</CardTitle>
-                <div className="relative mt-2">
-                  <FaSearch className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
-                  <Input
-                    placeholder="Search items..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-9"
-                  />
-                </div>
-              </CardHeader>
-              <CardContent className="max-h-60 overflow-y-auto">
-                <div className="space-y-2">
-                  {filteredAvailableItems.length > 0 ? (
-                    filteredAvailableItems.map((item) => (
-                      <div key={item.id} className="p-2 border rounded-md">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-medium">{item.name}</p>
-                            <p className="text-sm text-gray-500">{item.description}</p>
-                            <p className="text-sm font-semibold">₹{item.price?.toFixed(2)}</p>
-                          </div>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleAddAvailableItemToCart(item)}
-                          >
-                            Add
-                          </Button>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-gray-500 text-center py-4">No items match your search</p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-            
-            <ProductRequestForm onAdd={handleAddItem} />
-            
-            {requestItems.length > 0 && (
-              <div className="mt-4">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-medium">Pending Items ({requestItems.length})</h3>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={handleAddAllToCart}
-                  >
-                    Add All to Cart
-                  </Button>
-                </div>
-                <div className="space-y-2">
-                  {requestItems.map((item) => (
-                    <div key={item.id} className="p-2 border rounded-md">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <span className="font-medium">{item.name} (×{item.quantity})</span>
-                          {item.price && <span className="text-sm text-gray-500 ml-2">₹{item.price}</span>}
-                        </div>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => {
-                            addToCart(item);
-                            setRequestItems(requestItems.filter(i => i.id !== item.id));
-                          }}
-                        >
-                          Add
-                        </Button>
-                      </div>
-                      {item.description && (
-                        <p className="text-sm text-gray-500">{item.description}</p>
-                      )}
-                    </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            )}
+
+            {step === 'select-merchant' && (
+              <div className="space-y-6">
+                <h2 className="text-xl font-semibold">Select a Merchant</h2>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {merchants.map((merchant) => (
+                    <MerchantCard 
+                      key={merchant.id}
+                      merchant={merchant}
+                      onSelect={handleMerchantSelect}
+                    />
                   ))}
                 </div>
               </div>
             )}
+
+            {step === 'review' && (
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Selected Merchant</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {selectedMerchant && (
+                      <div className="flex items-center space-x-4">
+                        <img 
+                          src={selectedMerchant.image} 
+                          alt={selectedMerchant.name}
+                          className="w-16 h-16 rounded-lg object-cover"
+                        />
+                        <div>
+                          <h3 className="font-semibold">{selectedMerchant.name}</h3>
+                          <p className="text-sm text-gray-600">
+                            ⭐ {selectedMerchant.rating} • {selectedMerchant.deliveryTime}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            {selectedMerchant.categories.join(', ')}
+                          </p>
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => setStep('select-merchant')}
+                        >
+                          Change
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Request Summary</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {cart.map((product) => (
+                        <div key={product.id} className="flex items-center justify-between py-2 border-b last:border-0">
+                          <div>
+                            <h4 className="font-medium">{product.name}</h4>
+                            {product.description && (
+                              <p className="text-sm text-gray-600">{product.description}</p>
+                            )}
+                            {product.price && (
+                              <p className="text-sm text-gray-500">Expected: ₹{product.price}</p>
+                            )}
+                          </div>
+                          <span className="font-medium">×{product.quantity}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
           </div>
-          
-          {/* Cart Section */}
-          <div className="md:col-span-7">
-            <Card>
+
+          {/* Sidebar */}
+          <div>
+            <Card className="sticky top-24">
               <CardHeader>
-                <CardTitle>Request Cart ({cart.length} items)</CardTitle>
+                <CardTitle>Request Progress</CardTitle>
               </CardHeader>
-              <CardContent>
-                {cart.length === 0 ? (
-                  <div className="py-8 text-center text-gray-500">
-                    <p>Your request cart is empty</p>
-                    <p className="mt-2 text-sm">Add items using the form on the left</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {cart.map((item) => (
-                      <ProductCard key={item.id} product={item} editable={true} />
-                    ))}
-                    
-                    <div className="mt-6">
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span>Items added:</span>
+                  <span className="font-medium">{totalItems}</span>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span>Merchant selected:</span>
+                  <span className="font-medium">
+                    {selectedMerchant ? '✓' : '✗'}
+                  </span>
+                </div>
+
+                <div className="space-y-2">
+                  {step === 'add-products' && cart.length > 0 && (
+                    <Button 
+                      onClick={() => setStep('select-merchant')}
+                      className="w-full bg-kitchen-500 hover:bg-kitchen-600"
+                    >
+                      Continue to Merchant Selection
+                    </Button>
+                  )}
+                  
+                  {step === 'select-merchant' && (
+                    <Button 
+                      variant="outline"
+                      onClick={() => setStep('add-products')}
+                      className="w-full"
+                    >
+                      Back to Add Items
+                    </Button>
+                  )}
+                  
+                  {step === 'review' && (
+                    <>
                       <Button 
-                        className="w-full text-white bg-kitchen-500 hover:bg-kitchen-600"
                         onClick={handleSubmitRequest}
-                        disabled={cart.length === 0 && requestItems.length === 0}
+                        className="w-full bg-kitchen-500 hover:bg-kitchen-600"
+                        disabled={cart.length === 0 || !selectedMerchant}
                       >
                         Submit Request
                       </Button>
-                      <p className="mt-2 text-sm text-center text-gray-500">
-                        Your request will be sent to the merchant for a quote
-                      </p>
-                    </div>
+                      <Button 
+                        variant="outline"
+                        onClick={() => setStep('select-merchant')}
+                        className="w-full"
+                      >
+                        Back to Merchant Selection
+                      </Button>
+                    </>
+                  )}
+                </div>
+
+                {cart.length > 0 && (
+                  <div className="pt-4 border-t">
+                    <p className="text-sm text-gray-600 mb-2">Quick actions:</p>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => dispatch(clearCart())}
+                      className="w-full text-red-600 hover:text-red-700"
+                    >
+                      Clear All Items
+                    </Button>
                   </div>
                 )}
               </CardContent>
