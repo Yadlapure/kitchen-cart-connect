@@ -248,11 +248,14 @@ const appSlice = createSlice({
           order.merchantQuotes.push(merchantQuote);
         }
         
-        // Update status to 'quoted' when quote is submitted
-        order.status = 'quoted';
+        // Always update status to 'quoted' when any quote is submitted
+        if (order.status === 'requested') {
+          order.status = 'quoted';
+        }
         order.updatedAt = new Date();
         
-        console.log(`Quote submitted by merchant ${merchantQuote.merchantId} for order ${orderId}`);
+        console.log(`Quote submitted by merchant ${merchantQuote.merchantId} for order ${orderId}. Order status: ${order.status}`);
+        console.log(`Total quotes for this order: ${order.merchantQuotes.length}`);
       }
     },
     selectMerchantQuote: (state, action: PayloadAction<{ orderId: string; merchantId: string }>) => {

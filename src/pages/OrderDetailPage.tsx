@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,15 @@ const OrderDetailPage = () => {
   const [selectedDeliveryBoy, setSelectedDeliveryBoy] = useState("");
 
   const order = orders.find(o => o.id === orderId);
+
+  // Show quote notification for customers when status changes to 'quoted'
+  useEffect(() => {
+    if (order && user?.role === 'customer' && order.status === 'quoted' && order.merchantQuotes.length > 0) {
+      toast.success(`New quotes available! You have ${order.merchantQuotes.length} quote(s) to review.`, {
+        duration: 5000,
+      });
+    }
+  }, [order?.status, order?.merchantQuotes?.length, user?.role]);
 
   if (!order) {
     return (
@@ -75,6 +85,14 @@ const OrderDetailPage = () => {
   const merchantQuote = order.merchantQuotes?.find(q => q.merchantId === user?.id);
   const availableDeliveryBoys = deliveryBoys.filter(db => db.isAvailable);
 
+  console.log('Order details:', {
+    orderId: order.id,
+    status: order.status,
+    quotesCount: order.merchantQuotes?.length || 0,
+    selectedQuote: order.selectedQuote,
+    userRole: user?.role
+  });
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
@@ -85,13 +103,20 @@ const OrderDetailPage = () => {
           <OrderStatusBadge status={order.status} />
         </div>
 
-        {/* Show notification when quotes are available */}
+        {/* Enhanced notification for customers when quotes are available */}
         {isCustomer && order.status === 'quoted' && order.merchantQuotes.length > 0 && !order.selectedQuote && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-            <h3 className="text-green-800 font-medium mb-2">🎉 New Quotes Available!</h3>
-            <p className="text-green-700 text-sm">
-              You have received {order.merchantQuotes.length} quote(s) from merchants. 
-              Review them below and select the one that best fits your needs.
+          <div className="mb-6 p-6 bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-200 rounded-lg shadow-sm">
+            <div className="flex items-center mb-3">
+              <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center mr-3">
+                <span className="text-white text-lg">🎉</span>
+              </div>
+              <h3 className="text-green-800 font-bold text-lg">New Quotes Available!</h3>
+            </div>
+            <p className="text-green-700 mb-2">
+              Great news! You have received <strong>{order.merchantQuotes.length} quote(s)</strong> from merchants.
+            </p>
+            <p className="text-green-600 text-sm">
+              📋 Review the detailed quotes below and select the one that best fits your needs and budget.
             </p>
           </div>
         )}
@@ -175,71 +200,86 @@ const OrderDetailPage = () => {
               />
             )}
 
-            {/* Customer Quote Selection */}
+            {/* Enhanced Customer Quote Selection */}
             {isCustomer && order.status === 'quoted' && order.merchantQuotes.length > 0 && (
               <div className="space-y-6">
-                <h3 className="text-xl font-semibold">Available Quotes ({order.merchantQuotes.length})</h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-semibold">Available Quotes ({order.merchantQuotes.length})</h3>
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                    {order.selectedQuote ? 'Quote Selected' : 'Choose a Quote'}
+                  </Badge>
+                </div>
+                
                 {order.merchantQuotes.map((quote) => {
                   const merchant = merchants.find(m => m.id === quote.merchantId);
                   const isSelected = order.selectedQuote === quote.merchantId;
                   return (
-                    <Card key={quote.merchantId} className={`p-6 ${isSelected ? 'border-green-500 bg-green-50' : ''}`}>
-                      <div className="flex justify-between items-start mb-4">
-                        <div>
-                          <h4 className="text-lg font-medium">{merchant?.name}</h4>
-                          <p className="text-sm text-gray-600">Rating: {merchant?.rating}/5 ⭐</p>
-                          {isSelected && <Badge className="mt-2 bg-green-500">Selected</Badge>}
+                    <Card key={quote.merchantId} className={`transition-all duration-200 ${isSelected ? 'border-2 border-green-500 bg-green-50 shadow-lg' : 'hover:shadow-md border hover:border-gray-300'}`}>
+                      <CardContent className="p-6">
+                        <div className="flex justify-between items-start mb-4">
+                          <div>
+                            <h4 className="text-lg font-medium flex items-center gap-2">
+                              {merchant?.name}
+                              {isSelected && <Badge className="bg-green-500">✓ Selected</Badge>}
+                            </h4>
+                            <p className="text-sm text-gray-600">Rating: {merchant?.rating}/5 ⭐</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-2xl font-bold text-green-600">₹{quote.total.toFixed(2)}</p>
+                            {quote.estimatedDeliveryTime && (
+                              <p className="text-sm text-gray-600">📅 {quote.estimatedDeliveryTime}</p>
+                            )}
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-2xl font-bold text-green-600">₹{quote.total.toFixed(2)}</p>
-                          {quote.estimatedDeliveryTime && (
-                            <p className="text-sm text-gray-600">📅 {quote.estimatedDeliveryTime}</p>
+
+                        <div className="space-y-3 mb-4">
+                          {quote.products.map((product) => (
+                            <div key={product.id} className="flex justify-between items-center p-3 bg-gray-50 rounded">
+                              <div>
+                                <span className="font-medium">{product.name}</span>
+                                <p className="text-sm text-gray-600">
+                                  {product.quantity} {product.unit}
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                {product.isAvailable ? (
+                                  <div>
+                                    <p className="font-medium">₹{product.updatedPrice}</p>
+                                    <Badge variant="outline" className="text-green-600 border-green-600">Available</Badge>
+                                  </div>
+                                ) : (
+                                  <Badge variant="outline" className="text-red-600 border-red-600">Not Available</Badge>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {quote.quoteNotes && (
+                          <div className="p-3 bg-blue-50 rounded mb-4">
+                            <p className="text-sm text-blue-800">💬 {quote.quoteNotes}</p>
+                          </div>
+                        )}
+
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <Badge variant="outline">{quote.paymentMethod}</Badge>
+                          </div>
+                          {!isSelected && !order.selectedQuote && (
+                            <Button 
+                              onClick={() => handleSelectQuote(quote.merchantId)}
+                              className="bg-green-500 hover:bg-green-600 text-white px-6 py-2"
+                            >
+                              Select This Quote
+                            </Button>
+                          )}
+                          {isSelected && (
+                            <Badge className="bg-green-500 text-white px-4 py-2">
+                              ✓ Your Choice
+                            </Badge>
                           )}
                         </div>
-                      </div>
-
-                      <div className="space-y-3 mb-4">
-                        {quote.products.map((product) => (
-                          <div key={product.id} className="flex justify-between items-center p-3 bg-gray-50 rounded">
-                            <div>
-                              <span className="font-medium">{product.name}</span>
-                              <p className="text-sm text-gray-600">
-                                {product.quantity} {product.unit}
-                              </p>
-                            </div>
-                            <div className="text-right">
-                              {product.isAvailable ? (
-                                <div>
-                                  <p className="font-medium">₹{product.updatedPrice}</p>
-                                  <Badge variant="outline" className="text-green-600 border-green-600">Available</Badge>
-                                </div>
-                              ) : (
-                                <Badge variant="outline" className="text-red-600 border-red-600">Not Available</Badge>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      {quote.quoteNotes && (
-                        <div className="p-3 bg-blue-50 rounded mb-4">
-                          <p className="text-sm text-blue-800">💬 {quote.quoteNotes}</p>
-                        </div>
-                      )}
-
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <Badge>{quote.paymentMethod}</Badge>
-                        </div>
-                        {!isSelected && (
-                          <Button 
-                            onClick={() => handleSelectQuote(quote.merchantId)}
-                            className="bg-green-500 hover:bg-green-600"
-                          >
-                            Select This Quote
-                          </Button>
-                        )}
-                      </div>
+                      </CardContent>
                     </Card>
                   );
                 })}
