@@ -20,25 +20,30 @@ interface MerchantQuoteCardProps {
 
 const MerchantQuoteCard = ({ orderId, merchantId, products, existingQuote }: MerchantQuoteCardProps) => {
   const dispatch = useAppDispatch();
-  const { merchants } = useAppSelector((state) => state.app);
+  const { merchants, orders } = useAppSelector((state) => state.app);
   
   const [estimatedDeliveryTime, setEstimatedDeliveryTime] = useState(existingQuote?.estimatedDeliveryTime || "");
   const [quoteNotes, setQuoteNotes] = useState(existingQuote?.quoteNotes || "");
   const [paymentMethod, setPaymentMethod] = useState<'COD' | 'Online' | 'UPI'>(existingQuote?.paymentMethod || "COD");
 
   const merchant = merchants.find(m => m.id === merchantId);
+  const order = orders.find(o => o.id === orderId);
   
-  // Get verified products for this merchant from existing quote or initialize from order products
+  // Get the current merchant quote from the order state to get real-time verification status
+  const currentMerchantQuote = order?.merchantQuotes?.find(q => q.merchantId === merchantId);
+  
+  // Initialize verified products from current quote or create unverified versions
   const getVerifiedProducts = () => {
-    if (existingQuote) {
-      return existingQuote.products;
+    if (currentMerchantQuote) {
+      return currentMerchantQuote.products;
     }
     return products.map(p => ({ ...p, isVerified: false, isAvailable: true }));
   };
 
-  const [verifiedProducts, setVerifiedProducts] = useState<Product[]>(getVerifiedProducts());
+  const verifiedProducts = getVerifiedProducts();
 
   const handleProductVerification = (productId: string, price: number, isAvailable: boolean, notes?: string) => {
+    // Dispatch verification to Redux store
     dispatch(verifyProduct({
       orderId,
       merchantId,
@@ -48,23 +53,19 @@ const MerchantQuoteCard = ({ orderId, merchantId, products, existingQuote }: Mer
       notes
     }));
 
-    setVerifiedProducts(prev => prev.map(p => 
-      p.id === productId 
-        ? { ...p, updatedPrice: price, isAvailable, isVerified: true, merchantNotes: notes }
-        : p
-    ));
+    toast.success(`${products.find(p => p.id === productId)?.name} verified successfully`);
   };
 
   const calculateTotal = () => {
     return verifiedProducts
-      .filter(p => p.isAvailable)
+      .filter(p => p.isAvailable && p.isVerified)
       .reduce((sum, product) => sum + (product.updatedPrice || 0) * product.quantity, 0);
   };
 
   const handleSubmitQuote = () => {
     const unverifiedProducts = verifiedProducts.filter(p => !p.isVerified);
     if (unverifiedProducts.length > 0) {
-      toast.error("Please verify all products before submitting quote");
+      toast.error(`Please verify all ${unverifiedProducts.length} remaining item(s) before submitting quote`);
       return;
     }
 
@@ -89,19 +90,33 @@ const MerchantQuoteCard = ({ orderId, merchantId, products, existingQuote }: Mer
 
   const allProductsVerified = verifiedProducts.every(p => p.isVerified);
   const hasSubmittedQuote = !!existingQuote;
+  const verifiedCount = verifiedProducts.filter(p => p.isVerified).length;
+  const totalCount = verifiedProducts.length;
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>Quote from {merchant?.name}</span>
-          {hasSubmittedQuote && <Badge className="bg-green-500">Quote Submitted</Badge>}
+          <div className="flex items-center gap-2">
+            {!hasSubmittedQuote && (
+              <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                {verifiedCount}/{totalCount} Verified
+              </Badge>
+            )}
+            {hasSubmittedQuote && <Badge className="bg-green-500">Quote Submitted</Badge>}
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Product Verification */}
         <div>
           <h4 className="font-medium mb-3">Verify Items & Set Prices</h4>
+          {!hasSubmittedQuote && (
+            <p className="text-sm text-gray-600 mb-4">
+              Please verify each item individually before submitting your quote to the customer.
+            </p>
+          )}
           <div className="space-y-4">
             {verifiedProducts.map((product) => (
               <ProductVerificationForm
@@ -168,6 +183,11 @@ const MerchantQuoteCard = ({ orderId, merchantId, products, existingQuote }: Mer
             <span>Total Amount:</span>
             <span>₹{calculateTotal().toFixed(2)}</span>
           </div>
+          {!allProductsVerified && (
+            <p className="text-sm text-gray-600 mt-1">
+              Total will update as you verify more items
+            </p>
+          )}
         </div>
 
         {/* Submit Button */}
@@ -177,7 +197,10 @@ const MerchantQuoteCard = ({ orderId, merchantId, products, existingQuote }: Mer
             className="w-full bg-kitchen-500 hover:bg-kitchen-600"
             disabled={!allProductsVerified || !estimatedDeliveryTime.trim()}
           >
-            Submit Quote to Customer
+            {allProductsVerified 
+              ? "Submit Quote to Customer" 
+              : `Verify Remaining ${totalCount - verifiedCount} Item(s) to Submit`
+            }
           </Button>
         )}
 
@@ -209,8 +232,12 @@ const ProductVerificationForm = ({ product, onVerify, readOnly = false }: Produc
       return;
     }
 
+    if (parseFloat(price) <= 0 && isAvailable) {
+      toast.error("Please enter a valid price greater than 0");
+      return;
+    }
+
     onVerify(product.id, parseFloat(price) || 0, isAvailable, notes.trim() || undefined);
-    toast.success(`${product.name} verified`);
   };
 
   const getUnitDisplay = (unit: string) => {
@@ -225,7 +252,7 @@ const ProductVerificationForm = ({ product, onVerify, readOnly = false }: Produc
   };
 
   return (
-    <Card className={`${product.isVerified ? 'border-green-500 bg-green-50' : 'border-gray-200'}`}>
+    <Card className={`${product.isVerified ? 'border-green-500 bg-green-50' : 'border-orange-200 bg-orange-50'}`}>
       <CardContent className="p-4">
         <div className="space-y-3">
           <div className="flex justify-between items-start">
@@ -238,8 +265,12 @@ const ProductVerificationForm = ({ product, onVerify, readOnly = false }: Produc
                 {product.quantity} {getUnitDisplay(product.unit)}
               </Badge>
             </div>
-            {product.isVerified && (
-              <Badge className="bg-green-500">Verified</Badge>
+            {product.isVerified ? (
+              <Badge className="bg-green-500">✓ Verified</Badge>
+            ) : (
+              <Badge variant="outline" className="border-orange-500 text-orange-700">
+                Pending Verification
+              </Badge>
             )}
           </div>
 
@@ -258,14 +289,16 @@ const ProductVerificationForm = ({ product, onVerify, readOnly = false }: Produc
               {isAvailable && (
                 <div>
                   <label className="block text-sm font-medium mb-1">
-                    Your Price (₹)
+                    Your Price (₹) *
                   </label>
                   <Input
                     type="number"
                     step="0.01"
+                    min="0.01"
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
                     placeholder="Enter your price"
+                    required
                   />
                 </div>
               )}
@@ -287,28 +320,28 @@ const ProductVerificationForm = ({ product, onVerify, readOnly = false }: Produc
                 className="w-full bg-kitchen-500 hover:bg-kitchen-600"
                 size="sm"
               >
-                Verify Item
+                ✓ Verify This Item
               </Button>
             </div>
           )}
 
           {(readOnly || product.isVerified) && (
-            <div className="space-y-2 text-sm">
+            <div className="space-y-2 text-sm bg-white p-3 rounded border">
               <div className="flex justify-between">
-                <span>Status:</span>
-                <span className={isAvailable ? "text-green-600" : "text-red-600"}>
-                  {isAvailable ? "Available" : "Not Available"}
+                <span className="font-medium">Status:</span>
+                <span className={isAvailable ? "text-green-600 font-medium" : "text-red-600 font-medium"}>
+                  {isAvailable ? "✓ Available" : "✗ Not Available"}
                 </span>
               </div>
               {isAvailable && (
                 <div className="flex justify-between">
-                  <span>Price:</span>
-                  <span className="font-medium">₹{product.updatedPrice}</span>
+                  <span className="font-medium">Price:</span>
+                  <span className="font-bold text-green-600">₹{product.updatedPrice}</span>
                 </div>
               )}
               {product.merchantNotes && (
                 <div>
-                  <span>Notes:</span>
+                  <span className="font-medium">Notes:</span>
                   <p className="text-gray-600 mt-1">{product.merchantNotes}</p>
                 </div>
               )}
