@@ -40,7 +40,7 @@ const OrderDetailPage = () => {
 
   const handleSelectQuote = (merchantId: string) => {
     dispatch(selectMerchantQuote({ orderId: order.id, merchantId }));
-    toast.success("Quote selected! Merchant has been notified.");
+    toast.success("Quote selected! Merchant has been notified and will start processing your order.");
   };
 
   const handleStatusUpdate = (newStatus: 'processing' | 'delivering') => {
@@ -84,6 +84,17 @@ const OrderDetailPage = () => {
           <h1 className="text-2xl font-bold">Order #{order.id.split('-')[1]}</h1>
           <OrderStatusBadge status={order.status} />
         </div>
+
+        {/* Show notification when quotes are available */}
+        {isCustomer && order.status === 'quoted' && order.merchantQuotes.length > 0 && !order.selectedQuote && (
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <h3 className="text-green-800 font-medium mb-2">🎉 New Quotes Available!</h3>
+            <p className="text-green-700 text-sm">
+              You have received {order.merchantQuotes.length} quote(s) from merchants. 
+              Review them below and select the one that best fits your needs.
+            </p>
+          </div>
+        )}
 
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Order Details */}
@@ -167,20 +178,22 @@ const OrderDetailPage = () => {
             {/* Customer Quote Selection */}
             {isCustomer && order.status === 'quoted' && order.merchantQuotes.length > 0 && (
               <div className="space-y-6">
-                <h3 className="text-xl font-semibold">Merchant Quotes</h3>
+                <h3 className="text-xl font-semibold">Available Quotes ({order.merchantQuotes.length})</h3>
                 {order.merchantQuotes.map((quote) => {
                   const merchant = merchants.find(m => m.id === quote.merchantId);
+                  const isSelected = order.selectedQuote === quote.merchantId;
                   return (
-                    <Card key={quote.merchantId} className="p-6">
+                    <Card key={quote.merchantId} className={`p-6 ${isSelected ? 'border-green-500 bg-green-50' : ''}`}>
                       <div className="flex justify-between items-start mb-4">
                         <div>
                           <h4 className="text-lg font-medium">{merchant?.name}</h4>
-                          <p className="text-sm text-gray-600">Rating: {merchant?.rating}/5</p>
+                          <p className="text-sm text-gray-600">Rating: {merchant?.rating}/5 ⭐</p>
+                          {isSelected && <Badge className="mt-2 bg-green-500">Selected</Badge>}
                         </div>
                         <div className="text-right">
                           <p className="text-2xl font-bold text-green-600">₹{quote.total.toFixed(2)}</p>
                           {quote.estimatedDeliveryTime && (
-                            <p className="text-sm text-gray-600">{quote.estimatedDeliveryTime}</p>
+                            <p className="text-sm text-gray-600">📅 {quote.estimatedDeliveryTime}</p>
                           )}
                         </div>
                       </div>
@@ -210,7 +223,7 @@ const OrderDetailPage = () => {
 
                       {quote.quoteNotes && (
                         <div className="p-3 bg-blue-50 rounded mb-4">
-                          <p className="text-sm text-blue-800">{quote.quoteNotes}</p>
+                          <p className="text-sm text-blue-800">💬 {quote.quoteNotes}</p>
                         </div>
                       )}
 
@@ -218,13 +231,14 @@ const OrderDetailPage = () => {
                         <div>
                           <Badge>{quote.paymentMethod}</Badge>
                         </div>
-                        <Button 
-                          onClick={() => handleSelectQuote(quote.merchantId)}
-                          className="bg-green-500 hover:bg-green-600"
-                          disabled={order.selectedQuote === quote.merchantId}
-                        >
-                          {order.selectedQuote === quote.merchantId ? 'Selected' : 'Select This Quote'}
-                        </Button>
+                        {!isSelected && (
+                          <Button 
+                            onClick={() => handleSelectQuote(quote.merchantId)}
+                            className="bg-green-500 hover:bg-green-600"
+                          >
+                            Select This Quote
+                          </Button>
+                        )}
                       </div>
                     </Card>
                   );

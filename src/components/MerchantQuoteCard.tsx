@@ -68,6 +68,11 @@ const MerchantQuoteCard = ({ orderId, merchantId, products, existingQuote }: Mer
       return;
     }
 
+    if (!estimatedDeliveryTime.trim()) {
+      toast.error("Please provide estimated delivery time");
+      return;
+    }
+
     const quote: MerchantQuote = {
       merchantId,
       products: verifiedProducts,
@@ -79,17 +84,18 @@ const MerchantQuoteCard = ({ orderId, merchantId, products, existingQuote }: Mer
     };
 
     dispatch(submitMerchantQuote({ orderId, merchantQuote: quote }));
-    toast.success("Quote submitted successfully!");
+    toast.success("Quote submitted successfully! Customer will be notified.");
   };
 
   const allProductsVerified = verifiedProducts.every(p => p.isVerified);
+  const hasSubmittedQuote = !!existingQuote;
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>Quote from {merchant?.name}</span>
-          {existingQuote && <Badge className="bg-green-500">Quote Submitted</Badge>}
+          {hasSubmittedQuote && <Badge className="bg-green-500">Quote Submitted</Badge>}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -102,7 +108,7 @@ const MerchantQuoteCard = ({ orderId, merchantId, products, existingQuote }: Mer
                 key={product.id}
                 product={product}
                 onVerify={handleProductVerification}
-                readOnly={!!existingQuote}
+                readOnly={hasSubmittedQuote}
               />
             ))}
           </div>
@@ -112,13 +118,13 @@ const MerchantQuoteCard = ({ orderId, merchantId, products, existingQuote }: Mer
         <div className="grid gap-4">
           <div>
             <label className="block text-sm font-medium mb-1">
-              Estimated Delivery Time
+              Estimated Delivery Time *
             </label>
             <Input
               value={estimatedDeliveryTime}
               onChange={(e) => setEstimatedDeliveryTime(e.target.value)}
               placeholder="e.g., 2-3 business days"
-              readOnly={!!existingQuote}
+              disabled={hasSubmittedQuote}
             />
           </div>
 
@@ -129,7 +135,7 @@ const MerchantQuoteCard = ({ orderId, merchantId, products, existingQuote }: Mer
             <Select 
               value={paymentMethod} 
               onValueChange={(value) => setPaymentMethod(value as any)}
-              disabled={!!existingQuote}
+              disabled={hasSubmittedQuote}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -151,7 +157,7 @@ const MerchantQuoteCard = ({ orderId, merchantId, products, existingQuote }: Mer
               onChange={(e) => setQuoteNotes(e.target.value)}
               placeholder="Additional notes about delivery, quality, etc."
               rows={3}
-              readOnly={!!existingQuote}
+              disabled={hasSubmittedQuote}
             />
           </div>
         </div>
@@ -165,14 +171,21 @@ const MerchantQuoteCard = ({ orderId, merchantId, products, existingQuote }: Mer
         </div>
 
         {/* Submit Button */}
-        {!existingQuote && (
+        {!hasSubmittedQuote && (
           <Button 
             onClick={handleSubmitQuote}
             className="w-full bg-kitchen-500 hover:bg-kitchen-600"
-            disabled={!allProductsVerified}
+            disabled={!allProductsVerified || !estimatedDeliveryTime.trim()}
           >
-            Submit Quote
+            Submit Quote to Customer
           </Button>
+        )}
+
+        {hasSubmittedQuote && (
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded">
+            <p className="text-blue-800 font-medium">✅ Quote Submitted Successfully</p>
+            <p className="text-sm text-blue-600 mt-1">Customer has been notified and can now review your quote.</p>
+          </div>
         )}
       </CardContent>
     </Card>

@@ -248,11 +248,11 @@ const appSlice = createSlice({
           order.merchantQuotes.push(merchantQuote);
         }
         
-        // Check if all selected merchants have submitted quotes
-        if (order.merchantQuotes.length === order.selectedMerchants.length) {
-          order.status = 'quoted';
-        }
+        // Update status to 'quoted' when quote is submitted
+        order.status = 'quoted';
         order.updatedAt = new Date();
+        
+        console.log(`Quote submitted by merchant ${merchantQuote.merchantId} for order ${orderId}`);
       }
     },
     selectMerchantQuote: (state, action: PayloadAction<{ orderId: string; merchantId: string }>) => {
@@ -269,6 +269,8 @@ const appSlice = createSlice({
           order.paymentMethod = selectedQuote.paymentMethod;
           order.status = 'confirmed';
           order.updatedAt = new Date();
+          
+          console.log(`Customer selected quote from merchant ${merchantId} for order ${orderId}`);
         }
       }
     },
