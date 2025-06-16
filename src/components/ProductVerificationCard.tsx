@@ -13,10 +13,11 @@ import { verifyProduct } from "@/store/appSlice";
 interface ProductVerificationCardProps {
   product: Product;
   orderId: string;
+  merchantId: string;
   isVerified?: boolean;
 }
 
-const ProductVerificationCard = ({ product, orderId, isVerified = false }: ProductVerificationCardProps) => {
+const ProductVerificationCard = ({ product, orderId, merchantId, isVerified = false }: ProductVerificationCardProps) => {
   const dispatch = useAppDispatch();
   const [price, setPrice] = useState(product.updatedPrice?.toString() || "");
   const [isAvailable, setIsAvailable] = useState(product.isAvailable !== false);
@@ -30,6 +31,7 @@ const ProductVerificationCard = ({ product, orderId, isVerified = false }: Produ
 
     dispatch(verifyProduct({
       orderId,
+      merchantId,
       productId: product.id,
       price: parseFloat(price) || 0,
       isAvailable,

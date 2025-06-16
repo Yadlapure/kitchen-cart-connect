@@ -1,7 +1,8 @@
+
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAppSelector, useAppDispatch } from "@/hooks/redux";
-import { setSelectedMerchant } from "@/store/appSlice";
+import { addSelectedMerchant } from "@/store/appSlice";
 import Header from "@/components/Header";
 import MerchantCard from "@/components/MerchantCard";
 
@@ -12,7 +13,7 @@ const Index = () => {
   const navigate = useNavigate();
 
   const handleSelectMerchant = (merchant: typeof merchants[0]) => {
-    dispatch(setSelectedMerchant(merchant));
+    dispatch(addSelectedMerchant(merchant.id));
     navigate('/request');
   };
 
