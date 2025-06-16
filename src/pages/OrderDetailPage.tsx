@@ -1,23 +1,24 @@
-
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Header from "@/components/Header";
 import OrderStatusBadge from "@/components/OrderStatusBadge";
 import ProductCard from "@/components/ProductCard";
 import MerchantQuoteCard from "@/components/MerchantQuoteCard";
 import { useAppSelector, useAppDispatch } from "@/hooks/redux";
-import { selectMerchantQuote } from "@/store/appSlice";
+import { selectMerchantQuote, updateOrder, assignDeliveryBoy } from "@/store/appSlice";
 import { toast } from "sonner";
 
 const OrderDetailPage = () => {
   const { orderId } = useParams();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { orders, merchants } = useAppSelector((state) => state.app);
+  const { orders, merchants, deliveryBoys } = useAppSelector((state) => state.app);
   const { user } = useAppSelector((state) => state.auth);
+  const [selectedDeliveryBoy, setSelectedDeliveryBoy] = useState("");
 
   const order = orders.find(o => o.id === orderId);
 
@@ -42,9 +43,37 @@ const OrderDetailPage = () => {
     toast.success("Quote selected! Merchant has been notified.");
   };
 
+  const handleStatusUpdate = (newStatus: 'processing' | 'delivering') => {
+    dispatch(updateOrder({ 
+      orderId: order.id, 
+      updates: { status: newStatus }
+    }));
+    toast.success(`Order status updated to ${newStatus}`);
+  };
+
+  const handleAssignDeliveryBoy = () => {
+    if (!selectedDeliveryBoy) {
+      toast.error("Please select a delivery boy");
+      return;
+    }
+    
+    dispatch(assignDeliveryBoy({ 
+      orderId: order.id, 
+      deliveryBoyId: selectedDeliveryBoy 
+    }));
+    
+    dispatch(updateOrder({ 
+      orderId: order.id, 
+      updates: { status: 'delivering' }
+    }));
+    
+    toast.success("Delivery boy assigned and order sent for delivery!");
+  };
+
   const isMerchant = user?.role === 'merchant';
   const isCustomer = user?.role === 'customer';
   const merchantQuote = order.merchantQuotes?.find(q => q.merchantId === user?.id);
+  const availableDeliveryBoys = deliveryBoys.filter(db => db.isAvailable);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -228,45 +257,64 @@ const OrderDetailPage = () => {
               </Card>
             )}
 
-            {/* Status update buttons for selected merchant */}
-            {isMerchant && order.selectedQuote === user.id && ['confirmed', 'processing', 'delivering'].includes(order.status) && (
+            {/* Status update and delivery assignment for selected merchant */}
+            {isMerchant && order.selectedQuote === user.id && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Update Status</CardTitle>
+                  <CardTitle>Order Management</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-2">
+                <CardContent className="space-y-4">
                   {order.status === 'confirmed' && (
                     <Button 
-                      onClick={() => {
-                        // Handle status update
-                        toast.success("Order processing started");
-                      }}
+                      onClick={() => handleStatusUpdate('processing')}
                       className="w-full bg-blue-500 hover:bg-blue-600"
                     >
-                      Start Processing
+                      Start Processing Order
                     </Button>
                   )}
+                  
                   {order.status === 'processing' && (
-                    <Button 
-                      onClick={() => {
-                        // Handle status update
-                        toast.success("Order out for delivery");
-                      }}
-                      className="w-full bg-orange-500 hover:bg-orange-600"
-                    >
-                      Out for Delivery
-                    </Button>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Assign Delivery Boy</label>
+                        <Select value={selectedDeliveryBoy} onValueChange={setSelectedDeliveryBoy}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select delivery boy" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableDeliveryBoys.map((db) => (
+                              <SelectItem key={db.id} value={db.id}>
+                                {db.name} - {db.phone}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <Button 
+                        onClick={handleAssignDeliveryBoy}
+                        className="w-full bg-orange-500 hover:bg-orange-600"
+                        disabled={!selectedDeliveryBoy}
+                      >
+                        Assign & Send for Delivery
+                      </Button>
+                    </div>
                   )}
-                  {order.status === 'delivering' && (
-                    <Button 
-                      onClick={() => {
-                        // Handle status update
-                        toast.success("Order delivered");
-                      }}
-                      className="w-full bg-green-500 hover:bg-green-600"
-                    >
-                      Mark as Delivered
-                    </Button>
+
+                  {order.status === 'delivering' && order.deliveryBoyId && (
+                    <div className="p-4 bg-blue-50 border border-blue-200 rounded">
+                      <p className="text-blue-800 font-medium">📦 Order Out for Delivery</p>
+                      <p className="text-sm text-blue-600 mt-1">
+                        Assigned to: {deliveryBoys.find(db => db.id === order.deliveryBoyId)?.name}
+                      </p>
+                    </div>
+                  )}
+
+                  {order.status === 'completed' && (
+                    <div className="p-4 bg-green-50 border border-green-200 rounded">
+                      <p className="text-green-800 font-medium">✅ Order Completed</p>
+                      <p className="text-sm text-green-600 mt-1">Order has been delivered successfully!</p>
+                    </div>
                   )}
                 </CardContent>
               </Card>

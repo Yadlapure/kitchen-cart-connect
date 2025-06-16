@@ -305,6 +305,7 @@ const appSlice = createSlice({
       if (order && deliveryBoy) {
         order.deliveryBoyId = deliveryBoyId;
         deliveryBoy.currentOrders.push(orderId);
+        deliveryBoy.isAvailable = false; // Mark as busy
       }
     },
     updateDeliveryStatus: (state, action: PayloadAction<{ orderId: string; status: 'completed' }>) => {
@@ -320,11 +321,12 @@ const appSlice = createSlice({
           order.commission = order.total * state.commissionRate;
         }
         
-        // Remove from delivery boy's current orders
+        // Remove from delivery boy's current orders and make available
         if (order.deliveryBoyId) {
           const deliveryBoy = state.deliveryBoys.find(db => db.id === order.deliveryBoyId);
           if (deliveryBoy) {
             deliveryBoy.currentOrders = deliveryBoy.currentOrders.filter(id => id !== orderId);
+            deliveryBoy.isAvailable = true; // Make available again
           }
         }
       }
