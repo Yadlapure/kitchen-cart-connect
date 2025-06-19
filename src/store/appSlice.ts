@@ -40,6 +40,7 @@ export interface MerchantQuote {
   quoteNotes?: string;
   paymentMethod?: 'COD' | 'Online' | 'UPI';
   submittedAt: string; // Changed from Date to string
+  isQuoteSubmitted?: boolean; // Add this property
 }
 
 export interface Order {

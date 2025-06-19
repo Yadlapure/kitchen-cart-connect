@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -145,7 +146,7 @@ const MerchantQuoteCard = ({ orderId, merchantId, products, existingQuote }: Mer
                 key={product.id}
                 product={product}
                 onVerify={handleProductVerification}
-                readOnly={isQuoteActuallySubmitted}
+                readOnly={!!isQuoteActuallySubmitted}
               />
             ))}
           </div>
@@ -161,7 +162,7 @@ const MerchantQuoteCard = ({ orderId, merchantId, products, existingQuote }: Mer
               value={estimatedDeliveryTime}
               onChange={(e) => setEstimatedDeliveryTime(e.target.value)}
               placeholder="e.g., 2-3 business days"
-              disabled={isQuoteActuallySubmitted}
+              disabled={!!isQuoteActuallySubmitted}
             />
           </div>
 
@@ -172,7 +173,7 @@ const MerchantQuoteCard = ({ orderId, merchantId, products, existingQuote }: Mer
             <Select 
               value={paymentMethod} 
               onValueChange={(value) => setPaymentMethod(value as any)}
-              disabled={isQuoteActuallySubmitted}
+              disabled={!!isQuoteActuallySubmitted}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -194,7 +195,7 @@ const MerchantQuoteCard = ({ orderId, merchantId, products, existingQuote }: Mer
               onChange={(e) => setQuoteNotes(e.target.value)}
               placeholder="Additional notes about delivery, quality, etc."
               rows={3}
-              disabled={isQuoteActuallySubmitted}
+              disabled={!!isQuoteActuallySubmitted}
             />
           </div>
         </div>
