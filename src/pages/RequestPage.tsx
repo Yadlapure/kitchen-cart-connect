@@ -95,7 +95,7 @@ const RequestPage = () => {
             {step === 'add-products' && (
               <div className="space-y-6">
                 <DefaultItemSelector onAddItem={handleAddProduct} />
-                <ProductRequestForm onAd={handleAddProduct} />
+                <ProductRequestForm onAdd={handleAddProduct} />
                 
                 {cart.length > 0 && (
                   <Card>
