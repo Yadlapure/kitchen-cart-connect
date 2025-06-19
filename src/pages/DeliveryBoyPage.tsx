@@ -165,7 +165,7 @@ const DeliveryBoyPage = () => {
                         <p className="text-sm">{new Intl.DateTimeFormat('en-US', {
                           dateStyle: 'short',
                           timeStyle: 'short'
-                        }).format(order.updatedAt)}</p>
+                        }).format(new Date(order.updatedAt))}</p>
                       </div>
                     </div>
                   </CardContent>

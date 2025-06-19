@@ -46,8 +46,8 @@ const RequestPage = () => {
       merchantQuotes: [],
       products: [...cart],
       status: 'requested' as const,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
 
     dispatch(addOrder(newOrder));
@@ -95,7 +95,7 @@ const RequestPage = () => {
             {step === 'add-products' && (
               <div className="space-y-6">
                 <DefaultItemSelector onAddItem={handleAddProduct} />
-                <ProductRequestForm onAdd={handleAddProduct} />
+                <ProductRequestForm onAd={handleAddProduct} />
                 
                 {cart.length > 0 && (
                   <Card>

@@ -14,11 +14,11 @@ const OrdersPage = () => {
 
   const activeOrders = orders.filter((order) => 
     ["requested", "quoted", "confirmed", "processing", "delivering"].includes(order.status)
-  ).sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+  ).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
   const completedOrders = orders.filter((order) => 
     order.status === "completed"
-  ).sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+  ).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
   const filteredOrders = activeTab === "active" ? activeOrders : completedOrders;
 
@@ -66,7 +66,7 @@ const OrdersPage = () => {
                           <p>{new Intl.DateTimeFormat('en-US', {
                             dateStyle: 'medium',
                             timeStyle: 'short'
-                          }).format(order.createdAt)}</p>
+                          }).format(new Date(order.createdAt))}</p>
                         </div>
                         <div>
                           <p className="text-sm font-medium text-gray-500">Items</p>

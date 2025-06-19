@@ -97,7 +97,7 @@ const MerchantRequestsPage = () => {
                         <p>{new Intl.DateTimeFormat('en-US', {
                           dateStyle: 'medium',
                           timeStyle: 'short'
-                        }).format(order.createdAt)}</p>
+                        }).format(new Date(order.createdAt))}</p>
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-500">Items</p>
