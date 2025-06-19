@@ -334,9 +334,18 @@ const appSlice = createSlice({
       const deliveryBoy = state.deliveryBoys.find(db => db.id === deliveryBoyId);
       
       if (order && deliveryBoy) {
+        // Update order with delivery assignment
         order.deliveryBoyId = deliveryBoyId;
+        order.status = 'delivering';
+        order.updatedAt = new Date().toISOString();
+        
+        // Update delivery boy availability
         deliveryBoy.currentOrders.push(orderId);
         deliveryBoy.isAvailable = false; // Mark as busy
+        
+        console.log(`🚚 DELIVERY ASSIGNMENT: Order ${orderId} assigned to delivery boy ${deliveryBoyId}`);
+        console.log(`📦 Delivery boy ${deliveryBoy.name} now has ${deliveryBoy.currentOrders.length} active orders`);
+        console.log(`🔄 Order status updated to: ${order.status}`);
       }
     },
     updateDeliveryStatus: (state, action: PayloadAction<{ orderId: string; status: 'completed' }>) => {
@@ -358,6 +367,9 @@ const appSlice = createSlice({
           if (deliveryBoy) {
             deliveryBoy.currentOrders = deliveryBoy.currentOrders.filter(id => id !== orderId);
             deliveryBoy.isAvailable = true; // Make available again
+            
+            console.log(`✅ DELIVERY COMPLETED: Order ${orderId} marked as completed`);
+            console.log(`🚚 Delivery boy ${deliveryBoy.name} is now available again`);
           }
         }
       }

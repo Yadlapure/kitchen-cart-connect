@@ -1,5 +1,5 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Header from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ const DeliveryBoyPage = () => {
   const { user } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const [lastOrderCount, setLastOrderCount] = useState(0);
   
   useEffect(() => {
     if (user?.role !== 'delivery_boy') {
@@ -21,24 +22,60 @@ const DeliveryBoyPage = () => {
     }
   }, [user, navigate]);
 
+  // Get my active orders
+  const myOrders = orders.filter(order => 
+    order.deliveryBoyId === user?.id && order.status === 'delivering'
+  );
+
+  // Get completed orders
+  const completedOrders = orders.filter(order => 
+    order.deliveryBoyId === user?.id && order.status === 'completed'
+  );
+
+  // Enhanced notification system for new delivery assignments
+  useEffect(() => {
+    if (user?.role === 'delivery_boy' && myOrders.length > lastOrderCount) {
+      const newOrdersCount = myOrders.length - lastOrderCount;
+      if (newOrdersCount > 0 && lastOrderCount > 0) {
+        toast.success(`🚚 NEW DELIVERY ASSIGNED! You have ${newOrdersCount} new order(s) to deliver.`, {
+          duration: 8000,
+          action: {
+            label: "View Orders",
+            onClick: () => {
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+          }
+        });
+        
+        console.log(`🔔 DELIVERY BOY NOTIFICATION: ${newOrdersCount} new orders assigned to ${user.name}`);
+      }
+    }
+    setLastOrderCount(myOrders.length);
+  }, [myOrders.length, user?.role, user?.name, lastOrderCount]);
+
+  // Real-time order updates notification
+  useEffect(() => {
+    if (user?.role === 'delivery_boy' && myOrders.length > 0) {
+      console.log(`📊 DELIVERY BOY DASHBOARD: ${user.name} has ${myOrders.length} active deliveries`);
+      
+      // Show persistent notification if there are active orders
+      myOrders.forEach(order => {
+        console.log(`📦 Active Order ${order.id.split('-')[1]}: ₹${order.total?.toFixed(2)} - ${getMerchantName(order.merchantId)}`);
+      });
+    }
+  }, [myOrders, user?.role, user?.name]);
+
   if (user?.role !== 'delivery_boy') {
     return null;
   }
-
-  const myOrders = orders.filter(order => 
-    order.deliveryBoyId === user.id && order.status === 'delivering'
-  );
-
-  const completedOrders = orders.filter(order => 
-    order.deliveryBoyId === user.id && order.status === 'completed'
-  );
 
   const handleMarkDelivered = (orderId: string) => {
     dispatch(updateDeliveryStatus({ orderId, status: 'completed' }));
     toast.success("Order marked as delivered! Merchant has been notified.");
   };
 
-  const getMerchantName = (merchantId: string) => {
+  const getMerchantName = (merchantId?: string) => {
+    if (!merchantId) return 'Unknown Merchant';
     const merchant = merchants.find(m => m.id === merchantId);
     return merchant?.name || 'Unknown Merchant';
   };
@@ -51,7 +88,7 @@ const DeliveryBoyPage = () => {
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold">My Deliveries</h1>
           <div className="flex gap-2">
-            <Badge variant="outline" className="bg-orange-50">
+            <Badge variant="outline" className={`${myOrders.length > 0 ? 'bg-orange-50 text-orange-700 border-orange-200 animate-pulse' : 'bg-gray-50'}`}>
               Active: {myOrders.length}
             </Badge>
             <Badge variant="outline" className="bg-green-50">
@@ -59,6 +96,21 @@ const DeliveryBoyPage = () => {
             </Badge>
           </div>
         </div>
+
+        {/* New Assignment Alert Banner */}
+        {myOrders.length > 0 && (
+          <div className="mb-6 p-4 bg-gradient-to-r from-orange-50 to-red-50 border-2 border-orange-200 rounded-lg shadow-lg">
+            <div className="flex items-center mb-2">
+              <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center mr-3 animate-bounce">
+                <span className="text-white text-lg">🚚</span>
+              </div>
+              <div>
+                <h3 className="text-orange-800 font-bold text-lg">🔥 ACTIVE DELIVERIES!</h3>
+                <p className="text-orange-600 text-sm">You have {myOrders.length} order(s) ready for delivery</p>
+              </div>
+            </div>
+          </div>
+        )}
         
         {/* Active Deliveries */}
         <div className="mb-8">
@@ -66,20 +118,27 @@ const DeliveryBoyPage = () => {
           {myOrders.length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center">
+                <div className="text-6xl mb-4">📭</div>
                 <p className="mb-4 text-gray-500">No active deliveries at the moment</p>
-                <p className="text-sm text-gray-400">New delivery assignments will appear here</p>
+                <p className="text-sm text-gray-400">New delivery assignments will appear here automatically</p>
               </CardContent>
             </Card>
           ) : (
             <div className="space-y-4">
               {myOrders.map((order) => (
-                <Card key={order.id} className="overflow-hidden border-l-4 border-l-orange-500">
-                  <CardHeader className="bg-orange-50">
+                <Card key={order.id} className="overflow-hidden border-l-4 border-l-orange-500 shadow-lg">
+                  <CardHeader className="bg-gradient-to-r from-orange-50 to-orange-100">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">
-                        Order #{order.id.split('-')[1]}
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        🚚 Order #{order.id.split('-')[1]}
+                        <Badge className="bg-orange-500 animate-pulse">URGENT - Deliver Now</Badge>
                       </CardTitle>
-                      <Badge className="bg-orange-500">Out for Delivery</Badge>
+                      <div className="text-right">
+                        <p className="text-sm text-gray-600">Assigned at</p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(order.updatedAt).toLocaleString()}
+                        </p>
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent className="p-6">
@@ -90,32 +149,32 @@ const DeliveryBoyPage = () => {
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-500">Total Amount</p>
-                        <p className="font-semibold text-green-600">₹{order.total?.toFixed(2)}</p>
+                        <p className="font-semibold text-green-600 text-xl">₹{order.total?.toFixed(2)}</p>
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-500">Payment Method</p>
-                        <Badge variant="outline">{order.paymentMethod}</Badge>
+                        <Badge variant="outline" className="font-medium">{order.paymentMethod}</Badge>
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-500">Items</p>
-                        <p>{order.products.reduce((total, product) => total + product.quantity, 0)} items</p>
+                        <p className="font-medium">{order.products.reduce((total, product) => total + product.quantity, 0)} items</p>
                       </div>
                     </div>
                     
-                    <h4 className="mb-2 font-medium">Items to Deliver:</h4>
-                    <div className="space-y-2 mb-4">
+                    <h4 className="mb-3 font-medium text-lg">📦 Items to Deliver:</h4>
+                    <div className="space-y-2 mb-6">
                       {order.products.filter(p => p.isAvailable !== false).map((product) => (
-                        <div key={product.id} className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded">
+                        <div key={product.id} className="flex items-center justify-between py-3 px-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border">
                           <div>
-                            <span className="font-medium">{product.name}</span>
+                            <span className="font-medium text-lg">{product.name}</span>
                             {product.description && (
                               <p className="text-sm text-gray-600">{product.description}</p>
                             )}
                           </div>
                           <div className="text-right">
-                            <span className="font-medium">{product.quantity} {product.unit}</span>
+                            <span className="font-bold text-lg">{product.quantity} {product.unit}</span>
                             {product.updatedPrice && (
-                              <p className="text-sm text-gray-600">₹{product.updatedPrice.toFixed(2)}</p>
+                              <p className="text-sm text-green-600 font-medium">₹{product.updatedPrice.toFixed(2)}</p>
                             )}
                           </div>
                         </div>
@@ -124,9 +183,9 @@ const DeliveryBoyPage = () => {
                     
                     <Button 
                       onClick={() => handleMarkDelivered(order.id)}
-                      className="w-full bg-green-500 hover:bg-green-600"
+                      className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 text-lg shadow-lg transform transition hover:scale-105"
                     >
-                      Mark as Delivered
+                      ✅ Mark as Delivered
                     </Button>
                   </CardContent>
                 </Card>
@@ -147,7 +206,7 @@ const DeliveryBoyPage = () => {
                       <CardTitle className="text-lg">
                         Order #{order.id.split('-')[1]}
                       </CardTitle>
-                      <Badge className="bg-green-500">Completed</Badge>
+                      <Badge className="bg-green-500">✅ Completed</Badge>
                     </div>
                   </CardHeader>
                   <CardContent className="p-4">
