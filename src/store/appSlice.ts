@@ -241,26 +241,26 @@ const appSlice = createSlice({
       const { orderId, merchantQuote } = action.payload;
       const order = state.orders.find(o => o.id === orderId);
       if (order) {
-        // Ensure submittedAt is a string
-        const quoteWithStringDate = {
+        // Mark the quote as properly submitted with timestamp
+        const finalQuote = {
           ...merchantQuote,
-          submittedAt: new Date().toISOString()
+          submittedAt: new Date().toISOString(),
+          isQuoteSubmitted: true
         };
         
         const existingQuoteIndex = order.merchantQuotes.findIndex(q => q.merchantId === merchantQuote.merchantId);
         if (existingQuoteIndex >= 0) {
-          order.merchantQuotes[existingQuoteIndex] = quoteWithStringDate;
+          order.merchantQuotes[existingQuoteIndex] = finalQuote;
         } else {
-          order.merchantQuotes.push(quoteWithStringDate);
+          order.merchantQuotes.push(finalQuote);
         }
         
-        // ALWAYS update status to 'quoted' when ANY quote is submitted
+        // ONLY NOW update status to 'quoted' when quote is actually submitted
         order.status = 'quoted';
         order.updatedAt = new Date().toISOString();
         
-        console.log(`✅ QUOTE SUBMITTED: Merchant ${merchantQuote.merchantId} submitted quote for order ${orderId}`);
+        console.log(`🎯 QUOTE ACTUALLY SUBMITTED: Merchant ${merchantQuote.merchantId} completed quote for order ${orderId}`);
         console.log(`📊 Order status updated to: ${order.status}`);
-        console.log(`📈 Total quotes for this order: ${order.merchantQuotes.length}`);
         console.log(`🔄 Order updatedAt: ${order.updatedAt}`);
       }
     },
@@ -287,11 +287,11 @@ const appSlice = createSlice({
       const { orderId, merchantId, productId, price, isAvailable, notes } = action.payload;
       const order = state.orders.find(o => o.id === orderId);
       if (order) {
-        // Find existing quote or create new one
-        let merchantQuote = order.merchantQuotes.find(q => q.merchantId === merchantId);
-        if (!merchantQuote) {
-          // Create new quote with ALL products from order as UNVERIFIED initially
-          merchantQuote = {
+        // Find existing merchant verification data (NOT a quote yet)
+        let merchantVerificationData = order.merchantQuotes?.find(q => q.merchantId === merchantId);
+        if (!merchantVerificationData) {
+          // Create new verification data structure (NOT submitted quote)
+          merchantVerificationData = {
             merchantId,
             products: order.products.map(p => ({ 
               ...p, 
@@ -301,43 +301,30 @@ const appSlice = createSlice({
               merchantNotes: undefined
             })),
             total: 0,
-            submittedAt: new Date().toISOString()
+            submittedAt: '', // Empty means not submitted yet
+            isQuoteSubmitted: false // Add flag to track if quote is actually submitted
           };
-          order.merchantQuotes.push(merchantQuote);
-          console.log(`🆕 Created new merchant quote for ${merchantId} with ${merchantQuote.products.length} unverified products`);
+          order.merchantQuotes.push(merchantVerificationData);
+          console.log(`🆕 Created new verification data for ${merchantId} with ${merchantVerificationData.products.length} unverified products`);
         }
         
         // Update ONLY the specific product that's being verified
-        const productIndex = merchantQuote.products.findIndex(p => p.id === productId);
+        const productIndex = merchantVerificationData.products.findIndex(p => p.id === productId);
         if (productIndex !== -1) {
-          // Update ONLY this specific product - leave all others untouched
-          merchantQuote.products[productIndex] = {
-            ...merchantQuote.products[productIndex],
+          merchantVerificationData.products[productIndex] = {
+            ...merchantVerificationData.products[productIndex],
             updatedPrice: price,
             isAvailable: isAvailable,
-            isVerified: true, // Mark THIS product as verified
+            isVerified: true,
             merchantNotes: notes
           };
           
-          console.log(`✅ INDIVIDUAL VERIFICATION: Product ${productId} (${merchantQuote.products[productIndex].name}) verified:`, {
-            price,
-            isAvailable,
-            notes,
-            merchantId,
-            orderId
-          });
-          
-          // Log status of all products to ensure isolation
-          console.log(`📋 All products status for merchant ${merchantId}:`, 
-            merchantQuote.products.map(p => ({
-              id: p.id,
-              name: p.name,
-              isVerified: p.isVerified,
-              price: p.updatedPrice,
-              available: p.isAvailable
-            }))
-          );
+          console.log(`✅ INDIVIDUAL VERIFICATION: Product ${productId} verified for merchant ${merchantId}`);
+          console.log(`📋 Verification progress: ${merchantVerificationData.products.filter(p => p.isVerified).length}/${merchantVerificationData.products.length}`);
         }
+        
+        // DO NOT change order status or mark as submitted - this is just verification
+        // Order status should only change when merchant actually submits the complete quote
       }
     },
     assignDeliveryBoy: (state, action: PayloadAction<{ orderId: string; deliveryBoyId: string }>) => {

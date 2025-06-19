@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,16 +28,17 @@ const MerchantQuoteCard = ({ orderId, merchantId, products, existingQuote }: Mer
   const merchant = merchants.find(m => m.id === merchantId);
   const order = orders.find(o => o.id === orderId);
   
-  // Get the current merchant quote from the order state - this is the source of truth
-  const currentMerchantQuote = order?.merchantQuotes?.find(q => q.merchantId === merchantId);
+  // Get the current merchant verification data from order state
+  const currentMerchantData = order?.merchantQuotes?.find(q => q.merchantId === merchantId);
   
-  // Get products with their INDIVIDUAL verification status - each product is independent
-  const getProductsWithIndividualStatus = () => {
-    if (currentMerchantQuote && currentMerchantQuote.products) {
-      // Return products from the stored quote with their individual verification states
-      return currentMerchantQuote.products;
+  // Check if quote is actually submitted (not just verification data)
+  const isQuoteActuallySubmitted = currentMerchantData?.isQuoteSubmitted === true && currentMerchantData?.submittedAt;
+  
+  // Get products with their individual verification status
+  const getProductsWithVerificationStatus = () => {
+    if (currentMerchantData && currentMerchantData.products) {
+      return currentMerchantData.products;
     }
-    // If no quote exists yet, return original products as unverified
     return products.map(p => ({ 
       ...p, 
       isVerified: false, 
@@ -48,12 +48,11 @@ const MerchantQuoteCard = ({ orderId, merchantId, products, existingQuote }: Mer
     }));
   };
 
-  const verifiedProducts = getProductsWithIndividualStatus();
+  const verifiedProducts = getProductsWithVerificationStatus();
 
   const handleProductVerification = (productId: string, price: number, isAvailable: boolean, notes?: string) => {
-    console.log(`Verifying ONLY product ${productId} with price ${price}, available: ${isAvailable}`);
+    console.log(`🔧 Verifying ONLY product ${productId} - this is NOT quote submission`);
     
-    // Dispatch verification for ONLY this specific product
     dispatch(verifyProduct({
       orderId,
       merchantId,
@@ -64,7 +63,7 @@ const MerchantQuoteCard = ({ orderId, merchantId, products, existingQuote }: Mer
     }));
 
     const productName = products.find(p => p.id === productId)?.name;
-    toast.success(`${productName} verified successfully`);
+    toast.success(`${productName} verified - continue verifying remaining items`);
   };
 
   const calculateTotal = () => {
@@ -77,7 +76,6 @@ const MerchantQuoteCard = ({ orderId, merchantId, products, existingQuote }: Mer
     const unverifiedProducts = verifiedProducts.filter(p => !p.isVerified);
     if (unverifiedProducts.length > 0) {
       toast.error(`Please verify all ${unverifiedProducts.length} remaining item(s) before submitting quote`);
-      console.log('Unverified products:', unverifiedProducts.map(p => p.name));
       return;
     }
 
@@ -93,33 +91,28 @@ const MerchantQuoteCard = ({ orderId, merchantId, products, existingQuote }: Mer
       estimatedDeliveryTime,
       quoteNotes,
       paymentMethod,
-      submittedAt: new Date().toISOString()
+      submittedAt: new Date().toISOString(),
+      isQuoteSubmitted: true
     };
 
-    console.log('Submitting merchant quote:', quote);
+    console.log('🚀 ACTUALLY SUBMITTING QUOTE:', quote);
     dispatch(submitMerchantQuote({ orderId, merchantQuote: quote }));
     toast.success("Quote submitted successfully! Customer will be notified.");
   };
 
   const allProductsVerified = verifiedProducts.every(p => p.isVerified);
-  const hasSubmittedQuote = !!existingQuote;
   const verifiedCount = verifiedProducts.filter(p => p.isVerified).length;
   const totalCount = verifiedProducts.length;
 
-  console.log('Merchant Quote Card State:', {
+  console.log('🔍 MerchantQuoteCard State Check:', {
     orderId,
     merchantId,
     verifiedCount,
     totalCount,
     allProductsVerified,
-    hasSubmittedQuote,
-    individualVerificationStatus: verifiedProducts.map(p => ({ 
-      id: p.id, 
-      name: p.name, 
-      isVerified: p.isVerified,
-      price: p.updatedPrice,
-      available: p.isAvailable
-    }))
+    isQuoteActuallySubmitted,
+    hasVerificationData: !!currentMerchantData,
+    submittedAt: currentMerchantData?.submittedAt
   });
 
   return (
@@ -128,12 +121,12 @@ const MerchantQuoteCard = ({ orderId, merchantId, products, existingQuote }: Mer
         <CardTitle className="flex items-center justify-between">
           <span>Quote from {merchant?.name}</span>
           <div className="flex items-center gap-2">
-            {!hasSubmittedQuote && (
+            {!isQuoteActuallySubmitted && (
               <Badge variant="outline" className="bg-blue-50 text-blue-700">
                 {verifiedCount}/{totalCount} Verified
               </Badge>
             )}
-            {hasSubmittedQuote && <Badge className="bg-green-500">Quote Submitted</Badge>}
+            {isQuoteActuallySubmitted && <Badge className="bg-green-500">Quote Submitted</Badge>}
           </div>
         </CardTitle>
       </CardHeader>
@@ -141,9 +134,9 @@ const MerchantQuoteCard = ({ orderId, merchantId, products, existingQuote }: Mer
         {/* Product Verification */}
         <div>
           <h4 className="font-medium mb-3">Verify Items & Set Prices</h4>
-          {!hasSubmittedQuote && (
+          {!isQuoteActuallySubmitted && (
             <p className="text-sm text-gray-600 mb-4">
-              Please verify each item individually before submitting your quote to the customer.
+              Verify each item individually. Quote will only be sent to customer after all items are verified.
             </p>
           )}
           <div className="space-y-4">
@@ -152,7 +145,7 @@ const MerchantQuoteCard = ({ orderId, merchantId, products, existingQuote }: Mer
                 key={product.id}
                 product={product}
                 onVerify={handleProductVerification}
-                readOnly={hasSubmittedQuote}
+                readOnly={isQuoteActuallySubmitted}
               />
             ))}
           </div>
@@ -168,7 +161,7 @@ const MerchantQuoteCard = ({ orderId, merchantId, products, existingQuote }: Mer
               value={estimatedDeliveryTime}
               onChange={(e) => setEstimatedDeliveryTime(e.target.value)}
               placeholder="e.g., 2-3 business days"
-              disabled={hasSubmittedQuote}
+              disabled={isQuoteActuallySubmitted}
             />
           </div>
 
@@ -179,7 +172,7 @@ const MerchantQuoteCard = ({ orderId, merchantId, products, existingQuote }: Mer
             <Select 
               value={paymentMethod} 
               onValueChange={(value) => setPaymentMethod(value as any)}
-              disabled={hasSubmittedQuote}
+              disabled={isQuoteActuallySubmitted}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -201,7 +194,7 @@ const MerchantQuoteCard = ({ orderId, merchantId, products, existingQuote }: Mer
               onChange={(e) => setQuoteNotes(e.target.value)}
               placeholder="Additional notes about delivery, quality, etc."
               rows={3}
-              disabled={hasSubmittedQuote}
+              disabled={isQuoteActuallySubmitted}
             />
           </div>
         </div>
@@ -212,7 +205,7 @@ const MerchantQuoteCard = ({ orderId, merchantId, products, existingQuote }: Mer
             <span>Total Amount:</span>
             <span>₹{calculateTotal().toFixed(2)}</span>
           </div>
-          {!allProductsVerified && (
+          {!allProductsVerified && !isQuoteActuallySubmitted && (
             <p className="text-sm text-gray-600 mt-1">
               Total will update as you verify more items
             </p>
@@ -220,20 +213,20 @@ const MerchantQuoteCard = ({ orderId, merchantId, products, existingQuote }: Mer
         </div>
 
         {/* Submit Button */}
-        {!hasSubmittedQuote && (
+        {!isQuoteActuallySubmitted && (
           <Button 
             onClick={handleSubmitQuote}
             className="w-full bg-kitchen-500 hover:bg-kitchen-600"
             disabled={!allProductsVerified || !estimatedDeliveryTime.trim()}
           >
             {allProductsVerified 
-              ? "Submit Quote to Customer" 
-              : `Verify Remaining ${totalCount - verifiedCount} Item(s) to Submit`
+              ? "Submit Complete Quote to Customer" 
+              : `Verify Remaining ${totalCount - verifiedCount} Item(s) First`
             }
           </Button>
         )}
 
-        {hasSubmittedQuote && (
+        {isQuoteActuallySubmitted && (
           <div className="p-4 bg-blue-50 border border-blue-200 rounded">
             <p className="text-blue-800 font-medium">✅ Quote Submitted Successfully</p>
             <p className="text-sm text-blue-600 mt-1">Customer has been notified and can now review your quote.</p>

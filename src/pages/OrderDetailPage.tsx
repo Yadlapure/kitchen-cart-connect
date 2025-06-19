@@ -24,34 +24,36 @@ const OrderDetailPage = () => {
 
   const order = orders.find(o => o.id === orderId);
 
-  // Enhanced notification system - monitor order updates for real-time changes
+  // Enhanced notification system for ACTUAL quote submissions only
   useEffect(() => {
     if (order && user?.role === 'customer') {
-      // Check if order was recently updated with new quotes
+      // Count only ACTUALLY submitted quotes (not just verification data)
+      const actuallySubmittedQuotes = order.merchantQuotes?.filter(q => 
+        q.isQuoteSubmitted === true && q.submittedAt
+      ) || [];
+      
       const orderUpdateTime = new Date(order.updatedAt).getTime();
       const lastNotificationTime = lastOrderUpdate ? new Date(lastOrderUpdate).getTime() : 0;
       
-      // Show notification if:
-      // 1. Order status is 'quoted' 
-      // 2. There are merchant quotes
-      // 3. Order was updated after our last notification
+      // Show notification ONLY when:
+      // 1. Order status is 'quoted' (meaning at least one quote was actually submitted)
+      // 2. There are actually submitted quotes
+      // 3. Order was updated after our last notification 
       // 4. We haven't shown notification for this update yet
       if (order.status === 'quoted' && 
-          order.merchantQuotes.length > 0 && 
+          actuallySubmittedQuotes.length > 0 && 
           orderUpdateTime > lastNotificationTime &&
           !hasShownQuoteNotification) {
         
-        console.log('🔔 CUSTOMER NOTIFICATION: Showing quote notification:', {
+        console.log('🔔 CUSTOMER NOTIFICATION: New actual quotes available:', {
           orderId: order.id,
-          quotesCount: order.merchantQuotes.length,
+          actualQuotesCount: actuallySubmittedQuotes.length,
           status: order.status,
-          updatedAt: order.updatedAt,
-          lastUpdate: lastOrderUpdate
+          updatedAt: order.updatedAt
         });
         
-        // Show enhanced toast notification
-        toast.success(`🎉 NEW QUOTES RECEIVED! You have ${order.merchantQuotes.length} quote(s) from merchants ready for review.`, {
-          duration: 8000,
+        toast.success(`🎉 NEW QUOTES RECEIVED! You have ${actuallySubmittedQuotes.length} quote(s) from merchants ready for review.`, {
+          duration: 10000,
           action: {
             label: "Review Now →",
             onClick: () => {
@@ -125,18 +127,22 @@ const OrderDetailPage = () => {
 
   const isMerchant = user?.role === 'merchant';
   const isCustomer = user?.role === 'customer';
-  const merchantQuote = order.merchantQuotes?.find(q => q.merchantId === user?.id);
+  const merchantQuote = order?.merchantQuotes?.find(q => q.merchantId === user?.id);
   const availableDeliveryBoys = deliveryBoys.filter(db => db.isAvailable);
 
+  // Get only actually submitted quotes for customer view
+  const actuallySubmittedQuotes = order?.merchantQuotes?.filter(q => 
+    q.isQuoteSubmitted === true && q.submittedAt
+  ) || [];
+
   console.log('📊 OrderDetailPage State:', {
-    orderId: order.id,
-    status: order.status,
-    quotesCount: order.merchantQuotes?.length || 0,
-    selectedQuote: order.selectedQuote,
+    orderId: order?.id,
+    status: order?.status,
+    totalQuoteEntries: order?.merchantQuotes?.length || 0,
+    actuallySubmittedQuotes: actuallySubmittedQuotes.length,
+    selectedQuote: order?.selectedQuote,
     userRole: user?.role,
-    hasShownNotification: hasShownQuoteNotification,
-    orderUpdatedAt: order.updatedAt,
-    lastOrderUpdate: lastOrderUpdate
+    hasShownNotification: hasShownQuoteNotification
   });
 
   return (
@@ -149,9 +155,9 @@ const OrderDetailPage = () => {
           <OrderStatusBadge status={order.status} />
         </div>
 
-        {/* ENHANCED notification banner for customers when quotes are available */}
-        {isCustomer && order.status === 'quoted' && order.merchantQuotes.length > 0 && !order.selectedQuote && (
-          <div className="mb-6 p-6 bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-200 rounded-lg shadow-lg animate-pulse">
+        {/* ENHANCED notification banner for customers when ACTUAL quotes are available */}
+        {isCustomer && order?.status === 'quoted' && actuallySubmittedQuotes.length > 0 && !order.selectedQuote && (
+          <div className="mb-6 p-6 bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-200 rounded-lg shadow-lg">
             <div className="flex items-center mb-4">
               <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center mr-4 animate-bounce">
                 <span className="text-white text-xl">🎉</span>
@@ -163,7 +169,7 @@ const OrderDetailPage = () => {
             </div>
             <div className="bg-white/70 p-4 rounded-lg mb-4">
               <p className="text-green-800 font-medium text-lg mb-2">
-                ✨ You have received <span className="bg-green-200 px-2 py-1 rounded font-bold">{order.merchantQuotes.length} quote(s)</span> from merchants!
+                ✨ You have received <span className="bg-green-200 px-2 py-1 rounded font-bold">{actuallySubmittedQuotes.length} quote(s)</span> from merchants!
               </p>
               <p className="text-green-700">
                 📋 Compare prices, delivery times, and merchant ratings below to choose the best option for your needs.
@@ -265,7 +271,7 @@ const OrderDetailPage = () => {
             </Card>
 
             {/* Merchant Quote Interface */}
-            {isMerchant && order.selectedMerchants?.includes(user.id) && ['requested', 'quoted'].includes(order.status) && (
+            {isMerchant && order?.selectedMerchants?.includes(user.id) && ['requested', 'quoted'].includes(order.status) && (
               <MerchantQuoteCard
                 orderId={order.id}
                 merchantId={user.id}
@@ -274,17 +280,17 @@ const OrderDetailPage = () => {
               />
             )}
 
-            {/* Enhanced Customer Quote Selection */}
-            {isCustomer && order.status === 'quoted' && order.merchantQuotes.length > 0 && (
+            {/* Enhanced Customer Quote Selection - show only ACTUAL quotes */}
+            {isCustomer && order?.status === 'quoted' && actuallySubmittedQuotes.length > 0 && (
               <div id="quotes-section" className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-semibold">Available Quotes ({order.merchantQuotes.length})</h3>
+                  <h3 className="text-xl font-semibold">Available Quotes ({actuallySubmittedQuotes.length})</h3>
                   <Badge variant="secondary" className="bg-blue-100 text-blue-800">
                     {order.selectedQuote ? 'Quote Selected' : 'Choose a Quote'}
                   </Badge>
                 </div>
                 
-                {order.merchantQuotes.map((quote) => {
+                {actuallySubmittedQuotes.map((quote) => {
                   const merchant = merchants.find(m => m.id === quote.merchantId);
                   const isSelected = order.selectedQuote === quote.merchantId;
                   return (
