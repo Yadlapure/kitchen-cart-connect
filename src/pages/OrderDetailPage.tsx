@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,38 +20,60 @@ const OrderDetailPage = () => {
   const { user } = useAppSelector((state) => state.auth);
   const [selectedDeliveryBoy, setSelectedDeliveryBoy] = useState("");
   const [hasShownQuoteNotification, setHasShownQuoteNotification] = useState(false);
+  const [lastOrderUpdate, setLastOrderUpdate] = useState("");
 
   const order = orders.find(o => o.id === orderId);
 
-  // Enhanced notification system for customers when quotes arrive
+  // Enhanced notification system - monitor order updates for real-time changes
   useEffect(() => {
-    if (order && user?.role === 'customer' && order.status === 'quoted' && order.merchantQuotes.length > 0 && !hasShownQuoteNotification) {
-      console.log('Showing quote notification to customer:', {
-        orderId: order.id,
-        quotesCount: order.merchantQuotes.length,
-        status: order.status
-      });
+    if (order && user?.role === 'customer') {
+      // Check if order was recently updated with new quotes
+      const orderUpdateTime = new Date(order.updatedAt).getTime();
+      const lastNotificationTime = lastOrderUpdate ? new Date(lastOrderUpdate).getTime() : 0;
       
-      toast.success(`🎉 New quotes received! You have ${order.merchantQuotes.length} quote(s) from merchants to review.`, {
-        duration: 6000,
-        action: {
-          label: "Review Quotes",
-          onClick: () => {
-            const quotesSection = document.getElementById('quotes-section');
-            if (quotesSection) {
-              quotesSection.scrollIntoView({ behavior: 'smooth' });
+      // Show notification if:
+      // 1. Order status is 'quoted' 
+      // 2. There are merchant quotes
+      // 3. Order was updated after our last notification
+      // 4. We haven't shown notification for this update yet
+      if (order.status === 'quoted' && 
+          order.merchantQuotes.length > 0 && 
+          orderUpdateTime > lastNotificationTime &&
+          !hasShownQuoteNotification) {
+        
+        console.log('🔔 CUSTOMER NOTIFICATION: Showing quote notification:', {
+          orderId: order.id,
+          quotesCount: order.merchantQuotes.length,
+          status: order.status,
+          updatedAt: order.updatedAt,
+          lastUpdate: lastOrderUpdate
+        });
+        
+        // Show enhanced toast notification
+        toast.success(`🎉 NEW QUOTES RECEIVED! You have ${order.merchantQuotes.length} quote(s) from merchants ready for review.`, {
+          duration: 8000,
+          action: {
+            label: "Review Now →",
+            onClick: () => {
+              const quotesSection = document.getElementById('quotes-section');
+              if (quotesSection) {
+                quotesSection.scrollIntoView({ behavior: 'smooth' });
+              }
             }
           }
-        }
-      });
-      setHasShownQuoteNotification(true);
+        });
+        
+        setHasShownQuoteNotification(true);
+        setLastOrderUpdate(order.updatedAt);
+      }
     }
-  }, [order?.status, order?.merchantQuotes?.length, user?.role, hasShownQuoteNotification]);
+  }, [order?.status, order?.merchantQuotes?.length, order?.updatedAt, user?.role, hasShownQuoteNotification, lastOrderUpdate]);
 
-  // Reset notification flag when order changes or status changes
+  // Reset notification flag when navigating to different order
   useEffect(() => {
     setHasShownQuoteNotification(false);
-  }, [orderId, order?.status]);
+    setLastOrderUpdate("");
+  }, [orderId]);
 
   if (!order) {
     return (
@@ -107,14 +128,15 @@ const OrderDetailPage = () => {
   const merchantQuote = order.merchantQuotes?.find(q => q.merchantId === user?.id);
   const availableDeliveryBoys = deliveryBoys.filter(db => db.isAvailable);
 
-  console.log('Order details:', {
+  console.log('📊 OrderDetailPage State:', {
     orderId: order.id,
     status: order.status,
     quotesCount: order.merchantQuotes?.length || 0,
     selectedQuote: order.selectedQuote,
     userRole: user?.role,
     hasShownNotification: hasShownQuoteNotification,
-    orderUpdatedAt: order.updatedAt
+    orderUpdatedAt: order.updatedAt,
+    lastOrderUpdate: lastOrderUpdate
   });
 
   return (
@@ -127,23 +149,28 @@ const OrderDetailPage = () => {
           <OrderStatusBadge status={order.status} />
         </div>
 
-        {/* Enhanced notification banner for customers when quotes are available */}
+        {/* ENHANCED notification banner for customers when quotes are available */}
         {isCustomer && order.status === 'quoted' && order.merchantQuotes.length > 0 && !order.selectedQuote && (
-          <div className="mb-6 p-6 bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-200 rounded-lg shadow-sm">
-            <div className="flex items-center mb-3">
-              <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center mr-3">
-                <span className="text-white text-lg">🎉</span>
+          <div className="mb-6 p-6 bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-200 rounded-lg shadow-lg animate-pulse">
+            <div className="flex items-center mb-4">
+              <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center mr-4 animate-bounce">
+                <span className="text-white text-xl">🎉</span>
               </div>
-              <h3 className="text-green-800 font-bold text-lg">New Quotes Available!</h3>
+              <div>
+                <h3 className="text-green-800 font-bold text-xl">🔥 FRESH QUOTES AVAILABLE!</h3>
+                <p className="text-green-600 text-sm">Updated {new Date(order.updatedAt).toLocaleString()}</p>
+              </div>
             </div>
-            <p className="text-green-700 mb-2">
-              Great news! You have received <strong>{order.merchantQuotes.length} quote(s)</strong> from merchants.
-            </p>
-            <p className="text-green-600 text-sm">
-              📋 Review the detailed quotes below and select the one that best fits your needs and budget.
-            </p>
+            <div className="bg-white/70 p-4 rounded-lg mb-4">
+              <p className="text-green-800 font-medium text-lg mb-2">
+                ✨ You have received <span className="bg-green-200 px-2 py-1 rounded font-bold">{order.merchantQuotes.length} quote(s)</span> from merchants!
+              </p>
+              <p className="text-green-700">
+                📋 Compare prices, delivery times, and merchant ratings below to choose the best option for your needs.
+              </p>
+            </div>
             <Button 
-              className="mt-3 bg-green-500 hover:bg-green-600"
+              className="bg-green-600 hover:bg-green-700 text-white font-bold px-6 py-3 text-lg shadow-lg transform transition hover:scale-105"
               onClick={() => {
                 const quotesSection = document.getElementById('quotes-section');
                 if (quotesSection) {
@@ -151,7 +178,7 @@ const OrderDetailPage = () => {
                 }
               }}
             >
-              Review Quotes Now
+              🚀 Review Quotes Now →
             </Button>
           </div>
         )}
@@ -188,6 +215,18 @@ const OrderDetailPage = () => {
                     <p className="text-lg font-semibold">{order.total ? `₹${order.total.toFixed(2)}` : 'Pending quote'}</p>
                   </div>
                 </div>
+
+                {/* Real-time status indicator */}
+                {order.status === 'quoted' && (
+                  <div className="px-4 py-3 mt-4 bg-green-50 border-l-4 border-green-500 rounded-r-md">
+                    <p className="text-sm text-green-800">
+                      <span className="font-bold">🎯 Status Update:</span> Quotes received from {order.merchantQuotes.length} merchant(s)
+                    </p>
+                    <p className="text-xs text-green-600 mt-1">
+                      Last updated: {new Date(order.updatedAt).toLocaleString()}
+                    </p>
+                  </div>
+                )}
 
                 {order.estimatedDeliveryTime && (
                   <div className="px-4 py-2 mt-4 bg-blue-50 border border-blue-100 rounded-md">

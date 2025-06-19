@@ -29,15 +29,16 @@ const MerchantQuoteCard = ({ orderId, merchantId, products, existingQuote }: Mer
   const merchant = merchants.find(m => m.id === merchantId);
   const order = orders.find(o => o.id === orderId);
   
-  // Get the current merchant quote from the order state
+  // Get the current merchant quote from the order state - this is the source of truth
   const currentMerchantQuote = order?.merchantQuotes?.find(q => q.merchantId === merchantId);
   
-  // Initialize products - each must be verified individually
-  const getProductsWithVerificationStatus = () => {
-    if (currentMerchantQuote) {
+  // Get products with their INDIVIDUAL verification status - each product is independent
+  const getProductsWithIndividualStatus = () => {
+    if (currentMerchantQuote && currentMerchantQuote.products) {
+      // Return products from the stored quote with their individual verification states
       return currentMerchantQuote.products;
     }
-    // Start with all products unverified
+    // If no quote exists yet, return original products as unverified
     return products.map(p => ({ 
       ...p, 
       isVerified: false, 
@@ -47,10 +48,10 @@ const MerchantQuoteCard = ({ orderId, merchantId, products, existingQuote }: Mer
     }));
   };
 
-  const verifiedProducts = getProductsWithVerificationStatus();
+  const verifiedProducts = getProductsWithIndividualStatus();
 
   const handleProductVerification = (productId: string, price: number, isAvailable: boolean, notes?: string) => {
-    console.log(`Verifying individual product ${productId} with price ${price}, available: ${isAvailable}`);
+    console.log(`Verifying ONLY product ${productId} with price ${price}, available: ${isAvailable}`);
     
     // Dispatch verification for ONLY this specific product
     dispatch(verifyProduct({
@@ -116,7 +117,8 @@ const MerchantQuoteCard = ({ orderId, merchantId, products, existingQuote }: Mer
       id: p.id, 
       name: p.name, 
       isVerified: p.isVerified,
-      price: p.updatedPrice 
+      price: p.updatedPrice,
+      available: p.isAvailable
     }))
   });
 
@@ -249,6 +251,7 @@ interface ProductVerificationFormProps {
 }
 
 const ProductVerificationForm = ({ product, onVerify, readOnly = false }: ProductVerificationFormProps) => {
+  // Initialize with the EXACT current state of THIS specific product
   const [price, setPrice] = useState(product.updatedPrice?.toString() || "");
   const [isAvailable, setIsAvailable] = useState(product.isAvailable !== false);
   const [notes, setNotes] = useState(product.merchantNotes || "");
@@ -277,6 +280,14 @@ const ProductVerificationForm = ({ product, onVerify, readOnly = false }: Produc
       default: return unit;
     }
   };
+
+  console.log(`ProductVerificationForm for ${product.name}:`, {
+    id: product.id,
+    isVerified: product.isVerified,
+    isAvailable: product.isAvailable,
+    updatedPrice: product.updatedPrice,
+    merchantNotes: product.merchantNotes
+  });
 
   return (
     <Card className={`${product.isVerified ? 'border-green-500 bg-green-50' : 'border-orange-200 bg-orange-50'}`}>
@@ -356,11 +367,11 @@ const ProductVerificationForm = ({ product, onVerify, readOnly = false }: Produc
             <div className="space-y-2 text-sm bg-white p-3 rounded border">
               <div className="flex justify-between">
                 <span className="font-medium">Status:</span>
-                <span className={isAvailable ? "text-green-600 font-medium" : "text-red-600 font-medium"}>
-                  {isAvailable ? "✓ Available" : "✗ Not Available"}
+                <span className={product.isAvailable ? "text-green-600 font-medium" : "text-red-600 font-medium"}>
+                  {product.isAvailable ? "✓ Available" : "✗ Not Available"}
                 </span>
               </div>
-              {isAvailable && (
+              {product.isAvailable && product.updatedPrice && (
                 <div className="flex justify-between">
                   <span className="font-medium">Price:</span>
                   <span className="font-bold text-green-600">₹{product.updatedPrice}</span>

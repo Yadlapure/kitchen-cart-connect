@@ -254,12 +254,14 @@ const appSlice = createSlice({
           order.merchantQuotes.push(quoteWithStringDate);
         }
         
-        // Update status to 'quoted' when quote is submitted
+        // ALWAYS update status to 'quoted' when ANY quote is submitted
         order.status = 'quoted';
         order.updatedAt = new Date().toISOString();
         
-        console.log(`Quote submitted by merchant ${merchantQuote.merchantId} for order ${orderId}. Order status updated to: ${order.status}`);
-        console.log(`Total quotes for this order: ${order.merchantQuotes.length}`);
+        console.log(`✅ QUOTE SUBMITTED: Merchant ${merchantQuote.merchantId} submitted quote for order ${orderId}`);
+        console.log(`📊 Order status updated to: ${order.status}`);
+        console.log(`📈 Total quotes for this order: ${order.merchantQuotes.length}`);
+        console.log(`🔄 Order updatedAt: ${order.updatedAt}`);
       }
     },
     selectMerchantQuote: (state, action: PayloadAction<{ orderId: string; merchantId: string }>) => {
@@ -288,7 +290,7 @@ const appSlice = createSlice({
         // Find existing quote or create new one
         let merchantQuote = order.merchantQuotes.find(q => q.merchantId === merchantId);
         if (!merchantQuote) {
-          // Create new quote with all products unverified initially
+          // Create new quote with ALL products from order as UNVERIFIED initially
           merchantQuote = {
             merchantId,
             products: order.products.map(p => ({ 
@@ -302,25 +304,39 @@ const appSlice = createSlice({
             submittedAt: new Date().toISOString()
           };
           order.merchantQuotes.push(merchantQuote);
+          console.log(`🆕 Created new merchant quote for ${merchantId} with ${merchantQuote.products.length} unverified products`);
         }
         
-        // Only update the specific product that's being verified
+        // Update ONLY the specific product that's being verified
         const productIndex = merchantQuote.products.findIndex(p => p.id === productId);
         if (productIndex !== -1) {
+          // Update ONLY this specific product - leave all others untouched
           merchantQuote.products[productIndex] = {
             ...merchantQuote.products[productIndex],
             updatedPrice: price,
             isAvailable: isAvailable,
-            isVerified: true,
+            isVerified: true, // Mark THIS product as verified
             merchantNotes: notes
           };
           
-          console.log(`Product ${productId} verified individually:`, {
+          console.log(`✅ INDIVIDUAL VERIFICATION: Product ${productId} (${merchantQuote.products[productIndex].name}) verified:`, {
             price,
             isAvailable,
             notes,
-            productName: merchantQuote.products[productIndex].name
+            merchantId,
+            orderId
           });
+          
+          // Log status of all products to ensure isolation
+          console.log(`📋 All products status for merchant ${merchantId}:`, 
+            merchantQuote.products.map(p => ({
+              id: p.id,
+              name: p.name,
+              isVerified: p.isVerified,
+              price: p.updatedPrice,
+              available: p.isAvailable
+            }))
+          );
         }
       }
     },
