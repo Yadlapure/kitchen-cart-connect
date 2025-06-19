@@ -20,17 +20,40 @@ const OrderDetailPage = () => {
   const { orders, merchants, deliveryBoys } = useAppSelector((state) => state.app);
   const { user } = useAppSelector((state) => state.auth);
   const [selectedDeliveryBoy, setSelectedDeliveryBoy] = useState("");
+  const [hasShownQuoteNotification, setHasShownQuoteNotification] = useState(false);
 
   const order = orders.find(o => o.id === orderId);
 
-  // Show quote notification for customers when status changes to 'quoted'
+  // Enhanced notification system for customers when quotes arrive
   useEffect(() => {
-    if (order && user?.role === 'customer' && order.status === 'quoted' && order.merchantQuotes.length > 0) {
-      toast.success(`New quotes available! You have ${order.merchantQuotes.length} quote(s) to review.`, {
-        duration: 5000,
+    if (order && user?.role === 'customer' && order.status === 'quoted' && order.merchantQuotes.length > 0 && !hasShownQuoteNotification) {
+      console.log('Showing quote notification to customer:', {
+        orderId: order.id,
+        quotesCount: order.merchantQuotes.length,
+        status: order.status
       });
+      
+      toast.success(`🎉 New quotes received! You have ${order.merchantQuotes.length} quote(s) from merchants to review.`, {
+        duration: 6000,
+        action: {
+          label: "Review Quotes",
+          onClick: () => {
+            // Scroll to quotes section
+            const quotesSection = document.getElementById('quotes-section');
+            if (quotesSection) {
+              quotesSection.scrollIntoView({ behavior: 'smooth' });
+            }
+          }
+        }
+      });
+      setHasShownQuoteNotification(true);
     }
-  }, [order?.status, order?.merchantQuotes?.length, user?.role]);
+  }, [order?.status, order?.merchantQuotes?.length, user?.role, hasShownQuoteNotification]);
+
+  // Reset notification flag when order changes
+  useEffect(() => {
+    setHasShownQuoteNotification(false);
+  }, [orderId]);
 
   if (!order) {
     return (
@@ -90,7 +113,8 @@ const OrderDetailPage = () => {
     status: order.status,
     quotesCount: order.merchantQuotes?.length || 0,
     selectedQuote: order.selectedQuote,
-    userRole: user?.role
+    userRole: user?.role,
+    hasShownNotification: hasShownQuoteNotification
   });
 
   return (
@@ -103,9 +127,9 @@ const OrderDetailPage = () => {
           <OrderStatusBadge status={order.status} />
         </div>
 
-        {/* Enhanced notification for customers when quotes are available */}
+        {/* Enhanced notification banner for customers when quotes are available */}
         {isCustomer && order.status === 'quoted' && order.merchantQuotes.length > 0 && !order.selectedQuote && (
-          <div className="mb-6 p-6 bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-200 rounded-lg shadow-sm">
+          <div className="mb-6 p-6 bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-200 rounded-lg shadow-sm animate-pulse">
             <div className="flex items-center mb-3">
               <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center mr-3">
                 <span className="text-white text-lg">🎉</span>
@@ -118,6 +142,17 @@ const OrderDetailPage = () => {
             <p className="text-green-600 text-sm">
               📋 Review the detailed quotes below and select the one that best fits your needs and budget.
             </p>
+            <Button 
+              className="mt-3 bg-green-500 hover:bg-green-600"
+              onClick={() => {
+                const quotesSection = document.getElementById('quotes-section');
+                if (quotesSection) {
+                  quotesSection.scrollIntoView({ behavior: 'smooth' });
+                }
+              }}
+            >
+              Review Quotes Now
+            </Button>
           </div>
         )}
 
@@ -202,7 +237,7 @@ const OrderDetailPage = () => {
 
             {/* Enhanced Customer Quote Selection */}
             {isCustomer && order.status === 'quoted' && order.merchantQuotes.length > 0 && (
-              <div className="space-y-6">
+              <div id="quotes-section" className="space-y-6">
                 <div className="flex items-center justify-between">
                   <h3 className="text-xl font-semibold">Available Quotes ({order.merchantQuotes.length})</h3>
                   <Badge variant="secondary" className="bg-blue-100 text-blue-800">

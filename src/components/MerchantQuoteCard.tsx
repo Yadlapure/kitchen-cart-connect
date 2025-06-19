@@ -32,17 +32,26 @@ const MerchantQuoteCard = ({ orderId, merchantId, products, existingQuote }: Mer
   // Get the current merchant quote from the order state to get real-time verification status
   const currentMerchantQuote = order?.merchantQuotes?.find(q => q.merchantId === merchantId);
   
-  // Initialize verified products from current quote or create unverified versions
-  const getVerifiedProducts = () => {
+  // Initialize products with verification status from current quote or as unverified
+  const getProductsWithVerificationStatus = () => {
     if (currentMerchantQuote) {
       return currentMerchantQuote.products;
     }
-    return products.map(p => ({ ...p, isVerified: false, isAvailable: true }));
+    // Start with all products unverified
+    return products.map(p => ({ 
+      ...p, 
+      isVerified: false, 
+      isAvailable: true,
+      updatedPrice: undefined,
+      merchantNotes: undefined
+    }));
   };
 
-  const verifiedProducts = getVerifiedProducts();
+  const verifiedProducts = getProductsWithVerificationStatus();
 
   const handleProductVerification = (productId: string, price: number, isAvailable: boolean, notes?: string) => {
+    console.log(`Verifying product ${productId} with price ${price}, available: ${isAvailable}`);
+    
     // Dispatch verification to Redux store
     dispatch(verifyProduct({
       orderId,
@@ -53,7 +62,8 @@ const MerchantQuoteCard = ({ orderId, merchantId, products, existingQuote }: Mer
       notes
     }));
 
-    toast.success(`${products.find(p => p.id === productId)?.name} verified successfully`);
+    const productName = products.find(p => p.id === productId)?.name;
+    toast.success(`${productName} verified successfully`);
   };
 
   const calculateTotal = () => {
@@ -84,6 +94,7 @@ const MerchantQuoteCard = ({ orderId, merchantId, products, existingQuote }: Mer
       submittedAt: new Date()
     };
 
+    console.log('Submitting merchant quote:', quote);
     dispatch(submitMerchantQuote({ orderId, merchantQuote: quote }));
     toast.success("Quote submitted successfully! Customer will be notified.");
   };
@@ -92,6 +103,16 @@ const MerchantQuoteCard = ({ orderId, merchantId, products, existingQuote }: Mer
   const hasSubmittedQuote = !!existingQuote;
   const verifiedCount = verifiedProducts.filter(p => p.isVerified).length;
   const totalCount = verifiedProducts.length;
+
+  console.log('Merchant Quote Card State:', {
+    orderId,
+    merchantId,
+    verifiedCount,
+    totalCount,
+    allProductsVerified,
+    hasSubmittedQuote,
+    verifiedProducts: verifiedProducts.map(p => ({ id: p.id, name: p.name, isVerified: p.isVerified }))
+  });
 
   return (
     <Card>
