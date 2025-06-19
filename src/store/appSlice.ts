@@ -39,7 +39,7 @@ export interface MerchantQuote {
   estimatedDeliveryTime?: string;
   quoteNotes?: string;
   paymentMethod?: 'COD' | 'Online' | 'UPI';
-  submittedAt: Date;
+  submittedAt: string; // Changed from Date to string
 }
 
 export interface Order {
@@ -52,8 +52,8 @@ export interface Order {
   merchantQuotes: MerchantQuote[];
   selectedQuote?: string;
   status: 'requested' | 'quoted' | 'confirmed' | 'processing' | 'delivering' | 'completed' | 'cancelled';
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string; // Changed from Date to string
+  updatedAt: string; // Changed from Date to string
   estimatedDeliveryTime?: string;
   paymentMethod?: 'COD' | 'Online' | 'UPI';
   total?: number;
@@ -229,7 +229,7 @@ const appSlice = createSlice({
       const { orderId, updates } = action.payload;
       const order = state.orders.find(order => order.id === orderId);
       if (order) {
-        Object.assign(order, updates, { updatedAt: new Date() });
+        Object.assign(order, updates, { updatedAt: new Date().toISOString() });
         
         // Auto-calculate commission when total is updated
         if (updates.total && updates.status === 'completed') {
@@ -241,20 +241,24 @@ const appSlice = createSlice({
       const { orderId, merchantQuote } = action.payload;
       const order = state.orders.find(o => o.id === orderId);
       if (order) {
+        // Ensure submittedAt is a string
+        const quoteWithStringDate = {
+          ...merchantQuote,
+          submittedAt: new Date().toISOString()
+        };
+        
         const existingQuoteIndex = order.merchantQuotes.findIndex(q => q.merchantId === merchantQuote.merchantId);
         if (existingQuoteIndex >= 0) {
-          order.merchantQuotes[existingQuoteIndex] = merchantQuote;
+          order.merchantQuotes[existingQuoteIndex] = quoteWithStringDate;
         } else {
-          order.merchantQuotes.push(merchantQuote);
+          order.merchantQuotes.push(quoteWithStringDate);
         }
         
-        // Always update status to 'quoted' when any quote is submitted
-        if (order.status === 'requested') {
-          order.status = 'quoted';
-        }
-        order.updatedAt = new Date();
+        // Update status to 'quoted' when quote is submitted
+        order.status = 'quoted';
+        order.updatedAt = new Date().toISOString();
         
-        console.log(`Quote submitted by merchant ${merchantQuote.merchantId} for order ${orderId}. Order status: ${order.status}`);
+        console.log(`Quote submitted by merchant ${merchantQuote.merchantId} for order ${orderId}. Order status updated to: ${order.status}`);
         console.log(`Total quotes for this order: ${order.merchantQuotes.length}`);
       }
     },
@@ -271,7 +275,7 @@ const appSlice = createSlice({
           order.quoteNotes = selectedQuote.quoteNotes;
           order.paymentMethod = selectedQuote.paymentMethod;
           order.status = 'confirmed';
-          order.updatedAt = new Date();
+          order.updatedAt = new Date().toISOString();
           
           console.log(`Customer selected quote from merchant ${merchantId} for order ${orderId}`);
         }
@@ -284,21 +288,39 @@ const appSlice = createSlice({
         // Find existing quote or create new one
         let merchantQuote = order.merchantQuotes.find(q => q.merchantId === merchantId);
         if (!merchantQuote) {
+          // Create new quote with all products unverified initially
           merchantQuote = {
             merchantId,
-            products: [...order.products.map(p => ({ ...p, isVerified: false }))],
+            products: order.products.map(p => ({ 
+              ...p, 
+              isVerified: false,
+              isAvailable: true,
+              updatedPrice: undefined,
+              merchantNotes: undefined
+            })),
             total: 0,
-            submittedAt: new Date()
+            submittedAt: new Date().toISOString()
           };
           order.merchantQuotes.push(merchantQuote);
         }
         
-        const product = merchantQuote.products.find(p => p.id === productId);
-        if (product) {
-          product.updatedPrice = price;
-          product.isAvailable = isAvailable;
-          product.isVerified = true;
-          product.merchantNotes = notes;
+        // Only update the specific product that's being verified
+        const productIndex = merchantQuote.products.findIndex(p => p.id === productId);
+        if (productIndex !== -1) {
+          merchantQuote.products[productIndex] = {
+            ...merchantQuote.products[productIndex],
+            updatedPrice: price,
+            isAvailable: isAvailable,
+            isVerified: true,
+            merchantNotes: notes
+          };
+          
+          console.log(`Product ${productId} verified individually:`, {
+            price,
+            isAvailable,
+            notes,
+            productName: merchantQuote.products[productIndex].name
+          });
         }
       }
     },
@@ -319,7 +341,7 @@ const appSlice = createSlice({
       
       if (order && status === 'completed') {
         order.status = 'completed';
-        order.updatedAt = new Date();
+        order.updatedAt = new Date().toISOString();
         
         // Calculate commission automatically
         if (order.total) {

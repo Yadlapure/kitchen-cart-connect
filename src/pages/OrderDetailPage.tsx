@@ -38,7 +38,6 @@ const OrderDetailPage = () => {
         action: {
           label: "Review Quotes",
           onClick: () => {
-            // Scroll to quotes section
             const quotesSection = document.getElementById('quotes-section');
             if (quotesSection) {
               quotesSection.scrollIntoView({ behavior: 'smooth' });
@@ -50,10 +49,10 @@ const OrderDetailPage = () => {
     }
   }, [order?.status, order?.merchantQuotes?.length, user?.role, hasShownQuoteNotification]);
 
-  // Reset notification flag when order changes
+  // Reset notification flag when order changes or status changes
   useEffect(() => {
     setHasShownQuoteNotification(false);
-  }, [orderId]);
+  }, [orderId, order?.status]);
 
   if (!order) {
     return (
@@ -114,7 +113,8 @@ const OrderDetailPage = () => {
     quotesCount: order.merchantQuotes?.length || 0,
     selectedQuote: order.selectedQuote,
     userRole: user?.role,
-    hasShownNotification: hasShownQuoteNotification
+    hasShownNotification: hasShownQuoteNotification,
+    orderUpdatedAt: order.updatedAt
   });
 
   return (
@@ -129,7 +129,7 @@ const OrderDetailPage = () => {
 
         {/* Enhanced notification banner for customers when quotes are available */}
         {isCustomer && order.status === 'quoted' && order.merchantQuotes.length > 0 && !order.selectedQuote && (
-          <div className="mb-6 p-6 bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-200 rounded-lg shadow-sm animate-pulse">
+          <div className="mb-6 p-6 bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-200 rounded-lg shadow-sm">
             <div className="flex items-center mb-3">
               <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center mr-3">
                 <span className="text-white text-lg">🎉</span>
@@ -170,14 +170,14 @@ const OrderDetailPage = () => {
                     <p>{new Intl.DateTimeFormat('en-US', {
                       dateStyle: 'medium',
                       timeStyle: 'short'
-                    }).format(order.createdAt)}</p>
+                    }).format(new Date(order.createdAt))}</p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-500">Last Updated</p>
                     <p>{new Intl.DateTimeFormat('en-US', {
                       dateStyle: 'medium',
                       timeStyle: 'short'
-                    }).format(order.updatedAt)}</p>
+                    }).format(new Date(order.updatedAt))}</p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-500">Payment Method</p>
