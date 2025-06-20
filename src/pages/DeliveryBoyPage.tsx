@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import Header from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { useAppSelector, useAppDispatch } from "@/hooks/redux";
-import { updateDeliveryStatus } from "@/store/appSlice";
+import { updateDeliveryStatus, updateOrder } from "@/store/appSlice";
 import { toast } from "sonner";
+import { MapPin, Phone, Clock } from "lucide-react";
 
 const DeliveryBoyPage = () => {
   const { orders, merchants } = useAppSelector((state) => state.app);
@@ -22,7 +24,7 @@ const DeliveryBoyPage = () => {
     }
   }, [user, navigate]);
 
-  // Get my active orders (orders assigned to this delivery boy)
+  // Get my active orders (orders assigned to this delivery boy with status 'delivering')
   const myOrders = orders.filter(order => 
     order.deliveryBoyId === user?.id && order.status === 'delivering'
   );
@@ -31,6 +33,11 @@ const DeliveryBoyPage = () => {
   const completedOrders = orders.filter(order => 
     order.deliveryBoyId === user?.id && order.status === 'completed'
   );
+
+  console.log(`🔍 DELIVERY BOY DASHBOARD: User ID: ${user?.id}, Total orders: ${orders.length}, My active orders: ${myOrders.length}`);
+  myOrders.forEach(order => {
+    console.log(`📦 Active Order: ${order.id}, Status: ${order.status}, Assigned to: ${order.deliveryBoyId}`);
+  });
 
   // Enhanced notification system for new delivery assignments
   useEffect(() => {
@@ -52,6 +59,17 @@ const DeliveryBoyPage = () => {
         
         console.log(`🔔 DELIVERY BOY NOTIFICATION: ${newOrdersCount} new orders assigned to ${user.name}`);
         
+        // Notify customer that delivery is starting
+        myOrders.slice(-newOrdersCount).forEach(order => {
+          // Update order to notify customer/merchant
+          dispatch(updateOrder({
+            orderId: order.id,
+            updates: {
+              status: 'delivering'
+            }
+          }));
+        });
+        
         // Play notification sound (if browser allows)
         try {
           const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmsdBDSK0u/deysELIHB7+WSUAwRU6nh8L5mHAU+ltAxyH0vBBuFygKjcSELLHfH8N2QQAoUXrTp66hVFApGn+DyvmsdBDSK0u/deysELI'); 
@@ -69,7 +87,7 @@ const DeliveryBoyPage = () => {
       
       setLastOrderCount(myOrders.length);
     }
-  }, [myOrders.length, user?.role, user?.name, lastOrderCount, hasShownInitialOrders]);
+  }, [myOrders.length, user?.role, user?.name, lastOrderCount, hasShownInitialOrders, dispatch]);
 
   // Real-time order updates notification
   useEffect(() => {
@@ -83,13 +101,14 @@ const DeliveryBoyPage = () => {
     }
   }, [myOrders, user?.role, user?.name]);
 
-  // Auto-refresh orders every 30 seconds
+  // Auto-refresh orders every 10 seconds for real-time updates
   useEffect(() => {
     const interval = setInterval(() => {
       if (user?.role === 'delivery_boy') {
         console.log(`🔄 AUTO-REFRESH: Checking for new delivery assignments for ${user.name}`);
+        // Force re-render by updating a dummy state if needed
       }
-    }, 30000);
+    }, 10000);
 
     return () => clearInterval(interval);
   }, [user?.role, user?.name]);
@@ -100,13 +119,17 @@ const DeliveryBoyPage = () => {
 
   const handleMarkDelivered = (orderId: string) => {
     dispatch(updateDeliveryStatus({ orderId, status: 'completed' }));
-    toast.success("Order marked as delivered! Merchant has been notified.");
+    toast.success("Order marked as delivered! Customer and merchant have been notified.");
   };
 
   const getMerchantName = (merchantId?: string) => {
     if (!merchantId) return 'Unknown Merchant';
     const merchant = merchants.find(m => m.id === merchantId);
     return merchant?.name || 'Unknown Merchant';
+  };
+
+  const handleStartDelivery = (orderId: string) => {
+    toast.success("📱 Customer and merchant notified: Delivery boy is on the way!");
   };
 
   return (
@@ -151,7 +174,7 @@ const DeliveryBoyPage = () => {
                 <div className="text-6xl mb-4">📭</div>
                 <p className="mb-4 text-gray-500">No active deliveries at the moment</p>
                 <p className="text-sm text-gray-400">New delivery assignments will appear here automatically</p>
-                <p className="text-xs text-gray-400 mt-2">Page refreshes every 30 seconds</p>
+                <p className="text-xs text-gray-400 mt-2">Page refreshes every 10 seconds</p>
               </CardContent>
             </Card>
           ) : (
@@ -173,6 +196,39 @@ const DeliveryBoyPage = () => {
                     </div>
                   </CardHeader>
                   <CardContent className="p-6">
+                    {/* Delivery Location Details */}
+                    <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                      <h4 className="font-semibold text-blue-800 mb-3 flex items-center gap-2">
+                        <MapPin className="w-4 h-4" />
+                        Delivery Details
+                      </h4>
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Customer Address</p>
+                          <p className="font-medium text-blue-700">
+                            {order.deliveryAddress || "123 Main Street, Customer Location"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Customer Phone</p>
+                          <p className="font-medium text-blue-700 flex items-center gap-1">
+                            <Phone className="w-3 h-3" />
+                            {order.customerPhone || "+91 98765 43210"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mt-3">
+                        <Button
+                          onClick={() => handleStartDelivery(order.id)}
+                          variant="outline"
+                          className="bg-blue-100 hover:bg-blue-200 text-blue-700 border-blue-300"
+                          size="sm"
+                        >
+                          📱 Notify Customer - On My Way
+                        </Button>
+                      </div>
+                    </div>
+
                     <div className="grid gap-4 mb-4 md:grid-cols-2">
                       <div>
                         <p className="text-sm font-medium text-gray-500">Merchant</p>

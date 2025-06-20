@@ -2,10 +2,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useAppSelector } from "@/hooks/redux";
 import Header from "@/components/Header";
-import { MapPin, Search } from "lucide-react";
+import LocationSearch from "@/components/LocationSearch";
 
 const Index = () => {
   const { user } = useAppSelector((state) => state.auth);
@@ -32,7 +31,8 @@ const Index = () => {
         (position) => {
           const { latitude, longitude } = position.coords;
           // In a real app, you'd reverse geocode these coordinates
-          setCurrentLocation(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+          const locationString = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+          setCurrentLocation(locationString);
           setIsLoadingLocation(false);
         },
         (error) => {
@@ -47,11 +47,21 @@ const Index = () => {
     }
   };
 
+  const handleLocationSelect = (location: string) => {
+    setSearchLocation(location);
+  };
+
   const handleStartRequest = () => {
     if (!currentLocation && !searchLocation) {
       alert("Please select your location first");
       return;
     }
+    
+    if (!user) {
+      alert("Please login to start request");
+      return;
+    }
+    
     navigate('/request');
   };
 
@@ -72,48 +82,15 @@ const Index = () => {
           </div>
 
           {/* Location Selection */}
-          <div className="max-w-2xl mx-auto mb-8 space-y-4">
-            <h2 className="text-xl font-semibold text-center">Select Your Location</h2>
-            
-            {/* Current Location */}
-            <div className="p-4 bg-white rounded-lg shadow-sm">
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-medium">Use Current Location</span>
-                <Button
-                  onClick={getCurrentLocation}
-                  disabled={isLoadingLocation}
-                  variant="outline"
-                  size="sm"
-                >
-                  <MapPin className="w-4 h-4 mr-2" />
-                  {isLoadingLocation ? "Getting..." : "Get Location"}
-                </Button>
-              </div>
-              {currentLocation && (
-                <p className="text-sm text-gray-600">📍 {currentLocation}</p>
-              )}
-            </div>
+          <LocationSearch
+            onLocationSelect={handleLocationSelect}
+            currentLocation={currentLocation}
+            onGetCurrentLocation={getCurrentLocation}
+            isLoadingLocation={isLoadingLocation}
+          />
 
-            {/* Search Location */}
-            <div className="p-4 bg-white rounded-lg shadow-sm">
-              <label className="block mb-2 font-medium">Or Search Location</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
-                  placeholder="Search for your city or village in India..."
-                  value={searchLocation}
-                  onChange={(e) => setSearchLocation(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              {searchLocation && (
-                <div className="mt-2 p-2 bg-gray-50 rounded text-sm">
-                  🔍 Searching for: {searchLocation}
-                </div>
-              )}
-            </div>
-
-            {/* Start Request Button */}
+          {/* Start Request Button */}
+          <div className="max-w-2xl mx-auto">
             <Button
               onClick={handleStartRequest}
               disabled={!currentLocation && !searchLocation}

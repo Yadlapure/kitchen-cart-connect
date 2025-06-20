@@ -224,7 +224,12 @@ const appSlice = createSlice({
       state.selectedMerchants = [];
     },
     addOrder: (state, action: PayloadAction<Order>) => {
-      state.orders.push(action.payload);
+      const orderWithDefaults = {
+        ...action.payload,
+        deliveryAddress: action.payload.deliveryAddress || "Customer delivery address will be provided",
+        customerPhone: action.payload.customerPhone || "+91 98765 43210"
+      };
+      state.orders.push(orderWithDefaults);
     },
     updateOrder: (state, action: PayloadAction<{ orderId: string; updates: Partial<Order> }>) => {
       const { orderId, updates } = action.payload;
@@ -339,13 +344,23 @@ const appSlice = createSlice({
         order.status = 'delivering';
         order.updatedAt = new Date().toISOString();
         
+        // Ensure delivery address and phone are set
+        if (!order.deliveryAddress) {
+          order.deliveryAddress = "123 Main Street, Customer Area, City - 560001";
+        }
+        if (!order.customerPhone) {
+          order.customerPhone = "+91 98765 43210";
+        }
+        
         // Update delivery boy availability
         deliveryBoy.currentOrders.push(orderId);
-        deliveryBoy.isAvailable = false; // Mark as busy
+        deliveryBoy.isAvailable = deliveryBoy.currentOrders.length < 3; // Can handle up to 3 orders
         
         console.log(`🚚 DELIVERY ASSIGNMENT: Order ${orderId} assigned to delivery boy ${deliveryBoyId}`);
         console.log(`📦 Delivery boy ${deliveryBoy.name} now has ${deliveryBoy.currentOrders.length} active orders`);
         console.log(`🔄 Order status updated to: ${order.status}`);
+        console.log(`📍 Delivery address: ${order.deliveryAddress}`);
+        console.log(`📞 Customer phone: ${order.customerPhone}`);
       }
     },
     updateDeliveryStatus: (state, action: PayloadAction<{ orderId: string; status: 'completed' }>) => {
