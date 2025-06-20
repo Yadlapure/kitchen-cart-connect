@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import Header from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,9 +24,10 @@ const DeliveryBoyPage = () => {
   }, [user, navigate]);
 
   // Get my active orders (orders assigned to this delivery boy with status 'delivering')
-  const myOrders = orders.filter(order => 
-    order.deliveryBoyId === user?.id && order.status === 'delivering'
-  );
+  const myOrders = orders.filter(order => {
+    console.log(`🔍 Checking order ${order.id}: deliveryBoyId=${order.deliveryBoyId}, status=${order.status}, userID=${user?.id}`);
+    return order.deliveryBoyId === user?.id && order.status === 'delivering';
+  });
 
   // Get completed orders
   const completedOrders = orders.filter(order => 
@@ -35,6 +35,14 @@ const DeliveryBoyPage = () => {
   );
 
   console.log(`🔍 DELIVERY BOY DASHBOARD: User ID: ${user?.id}, Total orders: ${orders.length}, My active orders: ${myOrders.length}`);
+  
+  // Debug: Log all orders with delivery assignments
+  orders.forEach(order => {
+    if (order.deliveryBoyId) {
+      console.log(`📦 Order with delivery assignment: ${order.id}, Status: ${order.status}, Assigned to: ${order.deliveryBoyId}, Current user: ${user?.id}`);
+    }
+  });
+
   myOrders.forEach(order => {
     console.log(`📦 Active Order: ${order.id}, Status: ${order.status}, Assigned to: ${order.deliveryBoyId}`);
   });
@@ -149,6 +157,17 @@ const DeliveryBoyPage = () => {
           </div>
         </div>
 
+        {/* Debug Information */}
+        <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+          <h3 className="font-medium text-blue-800 mb-2">🔧 Debug Info:</h3>
+          <p className="text-sm text-blue-600">Delivery Boy ID: {user?.id}</p>
+          <p className="text-sm text-blue-600">Total Orders in System: {orders.length}</p>
+          <p className="text-sm text-blue-600">Orders with Delivery Assignment: {orders.filter(o => o.deliveryBoyId).length}</p>
+          <p className="text-sm text-blue-600">My Active Orders: {myOrders.length}</p>
+          <p className="text-sm text-blue-600">My Completed Orders: {completedOrders.length}</p>
+          <p className="text-sm text-blue-600">Last Update: {new Date().toLocaleTimeString()}</p>
+        </div>
+
         {/* New Assignment Alert Banner */}
         {myOrders.length > 0 && (
           <div className="mb-6 p-4 bg-gradient-to-r from-orange-50 to-red-50 border-2 border-orange-200 rounded-lg shadow-lg">
@@ -175,6 +194,20 @@ const DeliveryBoyPage = () => {
                 <p className="mb-4 text-gray-500">No active deliveries at the moment</p>
                 <p className="text-sm text-gray-400">New delivery assignments will appear here automatically</p>
                 <p className="text-xs text-gray-400 mt-2">Page refreshes every 10 seconds</p>
+                
+                {/* Show orders that might be assigned to me for debugging */}
+                {orders.filter(o => o.deliveryBoyId === user?.id).length > 0 && (
+                  <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                    <p className="text-sm text-yellow-800">
+                      Found {orders.filter(o => o.deliveryBoyId === user?.id).length} orders assigned to you with different statuses:
+                    </p>
+                    {orders.filter(o => o.deliveryBoyId === user?.id).map(order => (
+                      <p key={order.id} className="text-xs text-yellow-700">
+                        Order {order.id.split('-')[1]}: Status = {order.status}
+                      </p>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           ) : (

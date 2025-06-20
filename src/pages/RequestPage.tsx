@@ -21,6 +21,7 @@ const RequestPage = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState<'add-products' | 'view-cart' | 'select-merchants' | 'review'>('add-products');
   const [showCart, setShowCart] = useState(false);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
   const handleAddProduct = (product: Product) => {
     dispatch(addToCart(product));
@@ -38,11 +39,17 @@ const RequestPage = () => {
 
   const handleProceedToMerchants = () => {
     if (!user) {
-      toast.error("Please login to continue");
-      navigate('/');
+      setShowLoginPrompt(true);
       return;
     }
     setStep('select-merchants');
+  };
+
+  const handleLoginRedirect = () => {
+    // Show login screen or redirect to login
+    setShowLoginPrompt(false);
+    // For now, we'll just show an alert. In a real app, you'd show a login modal or redirect
+    alert("Please login to continue. This would normally show a login modal.");
   };
 
   const handleMerchantToggle = (merchantId: string, checked: boolean) => {
@@ -83,6 +90,33 @@ const RequestPage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
+      
+      {/* Login Prompt Modal */}
+      {showLoginPrompt && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+            <h2 className="text-xl font-bold mb-4">Login Required</h2>
+            <p className="text-gray-600 mb-6">
+              You need to login to select merchants and send your request. Please login to continue.
+            </p>
+            <div className="flex gap-4">
+              <Button
+                onClick={handleLoginRedirect}
+                className="flex-1 bg-kitchen-500 hover:bg-kitchen-600"
+              >
+                Login
+              </Button>
+              <Button
+                onClick={() => setShowLoginPrompt(false)}
+                variant="outline"
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
       
       <main className="container px-4 py-8 mx-auto sm:px-6">
         <div className="flex items-center justify-between mb-6">
@@ -201,7 +235,7 @@ const RequestPage = () => {
                         onClick={handleProceedToMerchants}
                         className="flex-1 bg-kitchen-500 hover:bg-kitchen-600"
                       >
-                        {!user ? "Login to Continue" : "Choose Merchants"}
+                        {!user ? "Login to Choose Merchants" : "Choose Merchants"}
                       </Button>
                       <Button
                         variant="outline"
@@ -359,7 +393,7 @@ const RequestPage = () => {
                         disabled={cart.length === 0}
                         className="w-full bg-kitchen-500 hover:bg-kitchen-600"
                       >
-                        {!user ? "Login to Continue" : "Choose Merchants"}
+                        {!user ? "Login to Choose Merchants" : "Choose Merchants"}
                       </Button>
                       <Button 
                         variant="outline"

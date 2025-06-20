@@ -341,7 +341,7 @@ const appSlice = createSlice({
       if (order && deliveryBoy) {
         // Update order with delivery assignment
         order.deliveryBoyId = deliveryBoyId;
-        order.status = 'delivering';
+        order.status = 'delivering'; // Make sure status is set to 'delivering'
         order.updatedAt = new Date().toISOString();
         
         // Ensure delivery address and phone are set
@@ -353,7 +353,9 @@ const appSlice = createSlice({
         }
         
         // Update delivery boy availability
-        deliveryBoy.currentOrders.push(orderId);
+        if (!deliveryBoy.currentOrders.includes(orderId)) {
+          deliveryBoy.currentOrders.push(orderId);
+        }
         deliveryBoy.isAvailable = deliveryBoy.currentOrders.length < 3; // Can handle up to 3 orders
         
         console.log(`🚚 DELIVERY ASSIGNMENT: Order ${orderId} assigned to delivery boy ${deliveryBoyId}`);

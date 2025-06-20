@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -13,7 +12,7 @@ const Index = () => {
   const [currentLocation, setCurrentLocation] = useState<string | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
-  // If user is not a customer, redirect to appropriate page
+  // Only redirect if user is merchant/admin (they have their own dashboards)
   if (user?.role === 'merchant') {
     navigate('/merchant/requests');
     return null;
@@ -21,6 +20,11 @@ const Index = () => {
 
   if (user?.role === 'admin') {
     navigate('/admin/dashboard');
+    return null;
+  }
+
+  if (user?.role === 'delivery_boy') {
+    navigate('/delivery');
     return null;
   }
 
@@ -54,11 +58,6 @@ const Index = () => {
   const handleStartRequest = () => {
     if (!currentLocation && !searchLocation) {
       alert("Please select your location first");
-      return;
-    }
-    
-    if (!user) {
-      alert("Please login to start request");
       return;
     }
     
@@ -96,7 +95,7 @@ const Index = () => {
               disabled={!currentLocation && !searchLocation}
               className="w-full bg-kitchen-500 hover:bg-kitchen-600 py-3 text-lg"
             >
-              {!user ? "Login to Start Request" : "Start Request"}
+              Start Request
             </Button>
           </div>
         </section>
