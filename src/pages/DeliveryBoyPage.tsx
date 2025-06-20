@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import Header from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +14,7 @@ const DeliveryBoyPage = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const [lastOrderCount, setLastOrderCount] = useState(0);
+  const [hasShownInitialOrders, setHasShownInitialOrders] = useState(false);
   
   useEffect(() => {
     if (user?.role !== 'delivery_boy') {
@@ -22,7 +22,7 @@ const DeliveryBoyPage = () => {
     }
   }, [user, navigate]);
 
-  // Get my active orders
+  // Get my active orders (orders assigned to this delivery boy)
   const myOrders = orders.filter(order => 
     order.deliveryBoyId === user?.id && order.status === 'delivering'
   );
@@ -34,11 +34,14 @@ const DeliveryBoyPage = () => {
 
   // Enhanced notification system for new delivery assignments
   useEffect(() => {
-    if (user?.role === 'delivery_boy' && myOrders.length > lastOrderCount) {
-      const newOrdersCount = myOrders.length - lastOrderCount;
-      if (newOrdersCount > 0 && lastOrderCount > 0) {
+    if (user?.role === 'delivery_boy') {
+      console.log(`🔄 DELIVERY BOY CHECK: Current orders: ${myOrders.length}, Last count: ${lastOrderCount}, Has shown initial: ${hasShownInitialOrders}`);
+      
+      // Check if we have new orders assigned
+      if (myOrders.length > lastOrderCount && hasShownInitialOrders) {
+        const newOrdersCount = myOrders.length - lastOrderCount;
         toast.success(`🚚 NEW DELIVERY ASSIGNED! You have ${newOrdersCount} new order(s) to deliver.`, {
-          duration: 8000,
+          duration: 10000,
           action: {
             label: "View Orders",
             onClick: () => {
@@ -48,22 +51,48 @@ const DeliveryBoyPage = () => {
         });
         
         console.log(`🔔 DELIVERY BOY NOTIFICATION: ${newOrdersCount} new orders assigned to ${user.name}`);
+        
+        // Play notification sound (if browser allows)
+        try {
+          const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmsdBDSK0u/deysELIHB7+WSUAwRU6nh8L5mHAU+ltAxyH0vBBuFygKjcSELLHfH8N2QQAoUXrTp66hVFApGn+DyvmsdBDSK0u/deysELI'); 
+          audio.play().catch(() => {});
+        } catch (e) {
+          // Silent fail for audio
+        }
       }
+      
+      // Set initial state after first check
+      if (!hasShownInitialOrders) {
+        setHasShownInitialOrders(true);
+        console.log(`📊 DELIVERY BOY INITIAL STATE: ${user.name} has ${myOrders.length} active deliveries`);
+      }
+      
+      setLastOrderCount(myOrders.length);
     }
-    setLastOrderCount(myOrders.length);
-  }, [myOrders.length, user?.role, user?.name, lastOrderCount]);
+  }, [myOrders.length, user?.role, user?.name, lastOrderCount, hasShownInitialOrders]);
 
   // Real-time order updates notification
   useEffect(() => {
     if (user?.role === 'delivery_boy' && myOrders.length > 0) {
-      console.log(`📊 DELIVERY BOY DASHBOARD: ${user.name} has ${myOrders.length} active deliveries`);
+      console.log(`📊 DELIVERY BOY DASHBOARD UPDATE: ${user.name} has ${myOrders.length} active deliveries`);
       
       // Show persistent notification if there are active orders
-      myOrders.forEach(order => {
-        console.log(`📦 Active Order ${order.id.split('-')[1]}: ₹${order.total?.toFixed(2)} - ${getMerchantName(order.merchantId)}`);
+      myOrders.forEach((order, index) => {
+        console.log(`📦 Active Order ${index + 1} (${order.id.split('-')[1]}): ₹${order.total?.toFixed(2)} - ${getMerchantName(order.merchantId)}`);
       });
     }
   }, [myOrders, user?.role, user?.name]);
+
+  // Auto-refresh orders every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (user?.role === 'delivery_boy') {
+        console.log(`🔄 AUTO-REFRESH: Checking for new delivery assignments for ${user.name}`);
+      }
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [user?.role, user?.name]);
 
   if (user?.role !== 'delivery_boy') {
     return null;
@@ -107,6 +136,7 @@ const DeliveryBoyPage = () => {
               <div>
                 <h3 className="text-orange-800 font-bold text-lg">🔥 ACTIVE DELIVERIES!</h3>
                 <p className="text-orange-600 text-sm">You have {myOrders.length} order(s) ready for delivery</p>
+                <p className="text-orange-500 text-xs">Last updated: {new Date().toLocaleTimeString()}</p>
               </div>
             </div>
           </div>
@@ -121,6 +151,7 @@ const DeliveryBoyPage = () => {
                 <div className="text-6xl mb-4">📭</div>
                 <p className="mb-4 text-gray-500">No active deliveries at the moment</p>
                 <p className="text-sm text-gray-400">New delivery assignments will appear here automatically</p>
+                <p className="text-xs text-gray-400 mt-2">Page refreshes every 30 seconds</p>
               </CardContent>
             </Card>
           ) : (
