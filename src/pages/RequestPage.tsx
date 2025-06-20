@@ -84,7 +84,7 @@ const RequestPage = () => {
 
   // Show login screen if user clicked login to choose merchants
   if (showLoginScreen) {
-    return <LoginScreen />;
+    return <LoginScreen redirectTo="/request" />;
   }
 
   return (

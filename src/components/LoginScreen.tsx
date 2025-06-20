@@ -6,12 +6,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAppDispatch } from '@/hooks/redux';
 import { login } from '@/store/authSlice';
 import { toast } from 'sonner';
+import { useNavigate, useLocation } from 'react-router-dom';
 
-const LoginScreen = () => {
+interface LoginScreenProps {
+  redirectTo?: string;
+}
+
+const LoginScreen = ({ redirectTo }: LoginScreenProps) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,6 +28,10 @@ const LoginScreen = () => {
     
     if (success) {
       toast.success('Login successful!');
+      
+      // Redirect to the specified location or current path
+      const targetPath = redirectTo || location.pathname || '/';
+      navigate(targetPath, { replace: true });
     } else {
       toast.error('Invalid credentials. Please try again.');
     }
