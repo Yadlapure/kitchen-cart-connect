@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,8 @@ const Header = () => {
   };
 
   function getNavLinks() {
+    if (!user) return null;
+    
     switch (user?.role) {
       case 'customer':
         return (
@@ -51,6 +54,8 @@ const Header = () => {
   }
 
   function getMobileNavLinks() {
+    if (!user) return null;
+    
     switch (user?.role) {
       case 'customer':
         return (
@@ -110,23 +115,27 @@ const Header = () => {
             </Button>
           )}
 
-          <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-600">Welcome, {user?.name}</span>
-            <Button variant="outline" onClick={handleLogout} size="sm">
-              <FaSignOutAlt className="w-4 h-4 mr-1" />
-              Logout
-            </Button>
-          </div>
+          {user && (
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-600">Welcome, {user?.name}</span>
+              <Button variant="outline" onClick={handleLogout} size="sm">
+                <FaSignOutAlt className="w-4 h-4 mr-1" />
+                Logout
+              </Button>
+            </div>
+          )}
 
           {/* Mobile menu button */}
-          <Button variant="ghost" className="md:hidden" onClick={toggleMenu}>
-            <FaBars className="w-6 h-6" />
-          </Button>
+          {user && (
+            <Button variant="ghost" className="md:hidden" onClick={toggleMenu}>
+              <FaBars className="w-6 h-6" />
+            </Button>
+          )}
         </div>
       </div>
 
       {/* Mobile Navigation */}
-      {isMenuOpen && (
+      {isMenuOpen && user && (
         <div className="md:hidden">
           <div className="px-2 pt-2 pb-3 space-y-1">
             {getMobileNavLinks()}
