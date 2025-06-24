@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Provider } from 'react-redux';
 import { store } from './store';
 import { useAppSelector } from './hooks/redux';
@@ -22,56 +22,75 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const AppContent = () => {
-  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const location = useLocation();
 
-  console.log('AppContent render - user:', user, 'isAuthenticated:', isAuthenticated);
-
-  // Only require login for protected routes (not public customer routes)
-  const isProtectedRoute = window.location.pathname !== '/' && window.location.pathname !== '/request';
-  
-  if (!isAuthenticated && isProtectedRoute) {
-    return <LoginScreen />;
+  if (!isAuthenticated) {
+    // Redirect to login with the current path as redirect parameter
+    return <Navigate to={`/login?redirect=${encodeURIComponent(location.pathname)}`} replace />;
   }
+
+  return <>{children}</>;
+};
+
+const AppContent = () => {
+  const { user } = useAppSelector((state) => state.auth);
 
   return (
     <Routes>
-      {/* Public Customer Routes (no authentication required) */}
+      {/* Public Routes */}
       <Route path="/" element={<Index />} />
       <Route path="/request" element={<RequestPage />} />
+      <Route path="/login" element={<LoginScreen />} />
       
       {/* Protected Customer Routes */}
-      {user?.role === 'customer' && (
-        <>
-          <Route path="/orders" element={<OrdersPage />} />
-          <Route path="/orders/:orderId" element={<OrderDetailPage />} />
-        </>
-      )}
+      <Route path="/orders" element={
+        <ProtectedRoute>
+          {user?.role === 'customer' ? <OrdersPage /> : <Navigate to="/login" replace />}
+        </ProtectedRoute>
+      } />
+      <Route path="/orders/:orderId" element={
+        <ProtectedRoute>
+          {(user?.role === 'customer' || user?.role === 'merchant') ? <OrderDetailPage /> : <Navigate to="/login" replace />}
+        </ProtectedRoute>
+      } />
       
       {/* Merchant Routes */}
-      {user?.role === 'merchant' && (
-        <>
-          <Route path="/merchant/requests" element={<MerchantRequestsPage />} />
-          <Route path="/merchant/orders" element={<MerchantOrdersPage />} />
-          <Route path="/orders/:orderId" element={<OrderDetailPage />} />
-        </>
-      )}
+      <Route path="/merchant/requests" element={
+        <ProtectedRoute>
+          {user?.role === 'merchant' ? <MerchantRequestsPage /> : <Navigate to="/login" replace />}
+        </ProtectedRoute>
+      } />
+      <Route path="/merchant/orders" element={
+        <ProtectedRoute>
+          {user?.role === 'merchant' ? <MerchantOrdersPage /> : <Navigate to="/login" replace />}
+        </ProtectedRoute>
+      } />
       
       {/* Delivery Boy Routes */}
-      {user?.role === 'delivery_boy' && (
-        <>
-          <Route path="/delivery" element={<DeliveryBoyPage />} />
-        </>
-      )}
+      <Route path="/delivery" element={
+        <ProtectedRoute>
+          {user?.role === 'delivery_boy' ? <DeliveryBoyPage /> : <Navigate to="/login" replace />}
+        </ProtectedRoute>
+      } />
       
       {/* Admin Routes */}
-      {user?.role === 'admin' && (
-        <>
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="/admin/merchants" element={<AdminDashboard />} />
-          <Route path="/admin/orders" element={<AdminDashboard />} />
-        </>
-      )}
+      <Route path="/admin/dashboard" element={
+        <ProtectedRoute>
+          {user?.role === 'admin' ? <AdminDashboard /> : <Navigate to="/login" replace />}
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/merchants" element={
+        <ProtectedRoute>
+          {user?.role === 'admin' ? <AdminDashboard /> : <Navigate to="/login" replace />}
+        </ProtectedRoute>
+      } />
+      <Route path="/admin/orders" element={
+        <ProtectedRoute>
+          {user?.role === 'admin' ? <AdminDashboard /> : <Navigate to="/login" replace />}
+        </ProtectedRoute>
+      } />
       
       {/* Catch-all Route */}
       <Route path="*" element={<NotFound />} />

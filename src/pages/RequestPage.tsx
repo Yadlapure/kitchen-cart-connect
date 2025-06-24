@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +7,6 @@ import Header from "@/components/Header";
 import DefaultItemSelector from "@/components/DefaultItemSelector";
 import ProductRequestForm from "@/components/ProductRequestForm";
 import ProductCard from "@/components/ProductCard";
-import LoginScreen from "@/components/LoginScreen";
 import { useAppSelector, useAppDispatch } from "@/hooks/redux";
 import { addToCart, clearCart, addSelectedMerchant, removeSelectedMerchant, clearSelectedMerchants, addOrder } from "@/store/appSlice";
 import { Product, Merchant } from "@/store/appSlice";
@@ -23,7 +21,6 @@ const RequestPage = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState<'add-products' | 'view-cart' | 'select-merchants' | 'review'>('add-products');
   const [showCart, setShowCart] = useState(false);
-  const [showLoginScreen, setShowLoginScreen] = useState(false);
 
   const handleAddProduct = (product: Product) => {
     dispatch(addToCart(product));
@@ -41,7 +38,7 @@ const RequestPage = () => {
 
   const handleProceedToMerchants = () => {
     if (!user) {
-      setShowLoginScreen(true);
+      navigate('/login?redirect=' + encodeURIComponent('/request'));
       return;
     }
     setStep('select-merchants');
@@ -81,11 +78,6 @@ const RequestPage = () => {
   };
 
   const totalItems = cart.reduce((total, product) => total + product.quantity, 0);
-
-  // Show login screen if user clicked login to choose merchants
-  if (showLoginScreen) {
-    return <LoginScreen redirectTo="/request" />;
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">

@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -5,18 +6,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAppDispatch } from '@/hooks/redux';
 import { login } from '@/store/authSlice';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
-interface LoginScreenProps {
-  redirectTo?: string;
-}
-
-const LoginScreen = ({ redirectTo }: LoginScreenProps) => {
+const LoginScreen = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,12 +28,12 @@ const LoginScreen = ({ redirectTo }: LoginScreenProps) => {
       
       toast.success('Login successful!');
       
-      // Navigate to the redirect path or default route
-      const targetPath = redirectTo || '/request';
-      console.log('Login successful, navigating to:', targetPath);
+      // Get redirect path from URL params or default to /request
+      const redirectPath = searchParams.get('redirect') || '/request';
+      console.log('Login successful, navigating to:', redirectPath);
       
-      // Navigate and let React handle the state updates
-      navigate(targetPath, { replace: true });
+      // Navigate to the redirect path
+      navigate(redirectPath, { replace: true });
     } catch (error) {
       console.error('Login failed:', error);
       toast.error('Invalid credentials. Please try again.');
