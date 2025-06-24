@@ -1,5 +1,5 @@
 
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 
 interface User {
   id: string;
@@ -53,35 +53,44 @@ const dummyPasswords: Record<string, string> = {
   'delivery@test.com': 'delivery123'
 };
 
+// Async thunk for login
+export const login = createAsyncThunk(
+  'auth/login',
+  async ({ username, password }: { username: string; password: string }) => {
+    console.log('Login attempt:', username);
+    
+    if (dummyUsers[username] && dummyPasswords[username] === password) {
+      console.log('Login successful for:', username);
+      return dummyUsers[username];
+    }
+    
+    console.log('Login failed for:', username);
+    throw new Error('Invalid credentials');
+  }
+);
+
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    loginSuccess: (state, action: PayloadAction<User>) => {
-      state.user = action.payload;
-      state.isAuthenticated = true;
-    },
     logout: (state) => {
       state.user = null;
       state.isAuthenticated = false;
     },
   },
+  extraReducers: (builder) => {
+    builder
+      .addCase(login.fulfilled, (state, action) => {
+        state.user = action.payload;
+        state.isAuthenticated = true;
+      })
+      .addCase(login.rejected, (state) => {
+        state.user = null;
+        state.isAuthenticated = false;
+      });
+  },
 });
 
-export const { loginSuccess, logout } = authSlice.actions;
-
-// Thunk for login - now properly returns boolean
-export const login = (username: string, password: string) => (dispatch: any) => {
-  console.log('Login attempt:', username);
-  
-  if (dummyUsers[username] && dummyPasswords[username] === password) {
-    console.log('Login successful for:', username);
-    dispatch(loginSuccess(dummyUsers[username]));
-    return true;
-  }
-  
-  console.log('Login failed for:', username);
-  return false;
-};
+export const { logout } = authSlice.actions;
 
 export default authSlice.reducer;

@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,10 +26,10 @@ const LoginScreen = ({ redirectTo }: LoginScreenProps) => {
 
     console.log('Login form submitted');
     
-    // Dispatch returns the result of the thunk function
-    const success = dispatch(login(username, password));
-    
-    if (success) {
+    try {
+      // Properly await the async thunk
+      await dispatch(login({ username, password })).unwrap();
+      
       toast.success('Login successful!');
       
       console.log('Redirecting to:', redirectTo || location.pathname || '/');
@@ -36,7 +37,7 @@ const LoginScreen = ({ redirectTo }: LoginScreenProps) => {
       // Redirect to the specified location or current path
       const targetPath = redirectTo || location.pathname || '/';
       navigate(targetPath, { replace: true });
-    } else {
+    } catch (error) {
       toast.error('Invalid credentials. Please try again.');
     }
     
