@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,10 +23,15 @@ const LoginScreen = ({ redirectTo }: LoginScreenProps) => {
     e.preventDefault();
     setIsLoading(true);
 
+    console.log('Login form submitted');
+    
+    // Dispatch returns the result of the thunk function
     const success = dispatch(login(username, password));
     
     if (success) {
       toast.success('Login successful!');
+      
+      console.log('Redirecting to:', redirectTo || location.pathname || '/');
       
       // Redirect to the specified location or current path
       const targetPath = redirectTo || location.pathname || '/';

@@ -70,12 +70,17 @@ const authSlice = createSlice({
 
 export const { loginSuccess, logout } = authSlice.actions;
 
-// Thunk for login
+// Thunk for login - now properly returns boolean
 export const login = (username: string, password: string) => (dispatch: any) => {
+  console.log('Login attempt:', username);
+  
   if (dummyUsers[username] && dummyPasswords[username] === password) {
+    console.log('Login successful for:', username);
     dispatch(loginSuccess(dummyUsers[username]));
     return true;
   }
+  
+  console.log('Login failed for:', username);
   return false;
 };
 
