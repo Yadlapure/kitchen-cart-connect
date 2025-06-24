@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAppDispatch } from '@/hooks/redux';
 import { login } from '@/store/authSlice';
 import { toast } from 'sonner';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 interface LoginScreenProps {
   redirectTo?: string;
@@ -17,7 +17,6 @@ const LoginScreen = ({ redirectTo }: LoginScreenProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,16 +30,14 @@ const LoginScreen = ({ redirectTo }: LoginScreenProps) => {
       
       toast.success('Login successful!');
       
-      // Determine the redirect path
-      const targetPath = redirectTo || '/request'; // Default to /request if no specific redirect
-      console.log('Redirecting to:', targetPath);
+      // Navigate to the redirect path or default route
+      const targetPath = redirectTo || '/request';
+      console.log('Login successful, navigating to:', targetPath);
       
-      // Force navigation even if on the same page
+      // Navigate and let React handle the state updates
       navigate(targetPath, { replace: true });
-      
-      // Force a page refresh to ensure the UI updates properly
-      window.location.reload();
     } catch (error) {
+      console.error('Login failed:', error);
       toast.error('Invalid credentials. Please try again.');
     }
     

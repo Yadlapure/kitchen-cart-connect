@@ -23,10 +23,14 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const AppContent = () => {
-  const { user } = useAppSelector((state) => state.auth);
+  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
 
-  // Only require login for non-customer routes
-  if (!user && window.location.pathname !== '/' && window.location.pathname !== '/request') {
+  console.log('AppContent render - user:', user, 'isAuthenticated:', isAuthenticated);
+
+  // Only require login for protected routes (not public customer routes)
+  const isProtectedRoute = window.location.pathname !== '/' && window.location.pathname !== '/request';
+  
+  if (!isAuthenticated && isProtectedRoute) {
     return <LoginScreen />;
   }
 
