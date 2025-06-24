@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,11 +31,15 @@ const LoginScreen = ({ redirectTo }: LoginScreenProps) => {
       
       toast.success('Login successful!');
       
-      console.log('Redirecting to:', redirectTo || location.pathname || '/');
+      // Determine the redirect path
+      const targetPath = redirectTo || '/request'; // Default to /request if no specific redirect
+      console.log('Redirecting to:', targetPath);
       
-      // Redirect to the specified location or current path
-      const targetPath = redirectTo || location.pathname || '/';
+      // Force navigation even if on the same page
       navigate(targetPath, { replace: true });
+      
+      // Force a page refresh to ensure the UI updates properly
+      window.location.reload();
     } catch (error) {
       toast.error('Invalid credentials. Please try again.');
     }
