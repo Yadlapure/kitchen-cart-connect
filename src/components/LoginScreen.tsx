@@ -24,16 +24,37 @@ const LoginScreen = () => {
     
     try {
       // Properly await the async thunk
-      await dispatch(login({ username, password })).unwrap();
+      const result = await dispatch(login({ username, password })).unwrap();
       
       toast.success('Login successful!');
       
-      // Get redirect path from URL params or default to /request
-      const redirectPath = searchParams.get('redirect') || '/request';
-      console.log('Login successful, navigating to:', redirectPath);
+      // Get redirect path from URL params
+      const redirectPath = searchParams.get('redirect');
       
-      // Navigate to the redirect path
-      navigate(redirectPath, { replace: true });
+      // Determine where to redirect based on user role
+      let targetPath: string;
+      
+      switch (result.role) {
+        case 'customer':
+          targetPath = redirectPath || '/request';
+          break;
+        case 'merchant':
+          targetPath = '/merchant/requests';
+          break;
+        case 'admin':
+          targetPath = '/admin/dashboard';
+          break;
+        case 'delivery_boy':
+          targetPath = '/delivery';
+          break;
+        default:
+          targetPath = '/';
+      }
+      
+      console.log('Login successful, navigating to:', targetPath);
+      
+      // Navigate to the appropriate path
+      navigate(targetPath, { replace: true });
     } catch (error) {
       console.error('Login failed:', error);
       toast.error('Invalid credentials. Please try again.');
@@ -96,6 +117,7 @@ const LoginScreen = () => {
               <div><strong>Customer:</strong> customer@test.com / customer123</div>
               <div><strong>Merchant:</strong> merchant@test.com / merchant123</div>
               <div><strong>Admin:</strong> admin@test.com / admin123</div>
+              <div><strong>Delivery Boy:</strong> delivery@test.com / delivery123</div>
             </div>
           </div>
         </CardContent>

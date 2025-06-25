@@ -4,13 +4,13 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { useAppSelector, useAppDispatch } from "@/hooks/redux";
 import { logout } from "@/store/authSlice";
-import { FaShoppingCart, FaBars, FaSignOutAlt } from 'react-icons/fa';
+import { FaShoppingCart, FaBars, FaSignOutAlt, FaSignInAlt } from 'react-icons/fa';
 
 const Header = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { cart } = useAppSelector((state) => state.app);
-  const { user } = useAppSelector((state) => state.auth);
+  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const toggleMenu = () => {
@@ -19,6 +19,10 @@ const Header = () => {
 
   const handleLogout = () => {
     dispatch(logout());
+  };
+
+  const handleLogin = () => {
+    navigate('/login');
   };
 
   function getNavLinks() {
@@ -115,7 +119,7 @@ const Header = () => {
             </Button>
           )}
 
-          {user && (
+          {isAuthenticated ? (
             <div className="flex items-center space-x-2">
               <span className="text-sm text-gray-600">Welcome, {user?.name}</span>
               <Button variant="outline" onClick={handleLogout} size="sm">
@@ -123,6 +127,11 @@ const Header = () => {
                 Logout
               </Button>
             </div>
+          ) : (
+            <Button onClick={handleLogin} className="bg-kitchen-500 hover:bg-kitchen-600 text-white">
+              <FaSignInAlt className="w-4 h-4 mr-1" />
+              Login
+            </Button>
           )}
 
           {/* Mobile menu button */}
