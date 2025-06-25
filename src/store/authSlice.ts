@@ -58,6 +58,12 @@ export const login = createAsyncThunk(
   'auth/login',
   async ({ username, password }: { username: string; password: string }) => {
     console.log('Login attempt:', username);
+    console.log('Available users:', Object.keys(dummyUsers));
+    console.log('User exists:', !!dummyUsers[username]);
+    console.log('Password check:', dummyPasswords[username] === password);
+    
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 500));
     
     if (dummyUsers[username] && dummyPasswords[username] === password) {
       console.log('Login successful for:', username);
