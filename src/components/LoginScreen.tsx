@@ -1,10 +1,10 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAppDispatch } from '@/hooks/redux';
 import { login } from '@/store/authSlice';
+import { store } from '@/store';
 import { toast } from 'sonner';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
@@ -30,13 +30,42 @@ const LoginScreen = () => {
       // Get redirect path from URL params
       const redirectPath = searchParams.get('redirect');
       
-      // Navigate to home page by default, or use redirect path
-      const targetPath = redirectPath || '/';
+      // Wait a moment for the Redux state to update
+      setTimeout(() => {
+        const currentUser = store.getState().auth.user;
+        
+        // Determine where to redirect based on user role
+        let targetPath: string;
+        
+        if (redirectPath && currentUser?.role === 'customer') {
+          // If there's a redirect path and user is customer, use it
+          targetPath = redirectPath;
+        } else {
+          // Otherwise redirect based on role
+          switch (currentUser?.role) {
+            case 'customer':
+              targetPath = '/';
+              break;
+            case 'merchant':
+              targetPath = '/merchant/requests';
+              break;
+            case 'admin':
+              targetPath = '/admin/dashboard';
+              break;
+            case 'delivery_boy':
+              targetPath = '/delivery';
+              break;
+            default:
+              targetPath = '/';
+          }
+        }
+        
+        console.log('Login successful, navigating to:', targetPath, 'User role:', currentUser?.role);
+        
+        // Navigate to the appropriate path
+        navigate(targetPath, { replace: true });
+      }, 100); // Small delay to ensure Redux state is updated
       
-      console.log('Login successful, navigating to:', targetPath);
-      
-      // Navigate to the appropriate path
-      navigate(targetPath, { replace: true });
     } catch (error) {
       console.error('Login failed:', error);
       toast.error('Invalid credentials. Please try again.');
