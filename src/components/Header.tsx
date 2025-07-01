@@ -1,10 +1,12 @@
+
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { useAppSelector, useAppDispatch } from "@/hooks/redux";
 import { logout } from "@/store/authSlice";
 import { FaShoppingCart, FaBars, FaSignOutAlt, FaSignInAlt } from 'react-icons/fa';
-import { MapPin, ChevronDown } from 'lucide-react';
+import { MapPin, ChevronDown, User, Settings } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import LocationSelector from './LocationSelector';
 
 const Header = () => {
@@ -14,7 +16,6 @@ const Header = () => {
   const { user, isAuthenticated } = useAppSelector((state) => state.auth);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLocationSelectorOpen, setIsLocationSelectorOpen] = useState(false);
-  const [currentLocation, setCurrentLocation] = useState<string>("Select Location");
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -29,8 +30,21 @@ const Header = () => {
   };
 
   const handleLocationSelect = (location: string) => {
-    setCurrentLocation(location);
     setIsLocationSelectorOpen(false);
+  };
+
+  const getDisplayLocation = () => {
+    if (user?.selectedLocation) {
+      return user.selectedLocation;
+    }
+    return "Select Location";
+  };
+
+  const getDefaultAddress = () => {
+    if (user?.addresses) {
+      return user.addresses.find(addr => addr.isDefault);
+    }
+    return null;
   };
 
   function getNavLinks() {
@@ -102,26 +116,28 @@ const Header = () => {
       <div className="container flex items-center justify-between h-16 px-4 mx-auto sm:px-6">
         <div className="flex items-center space-x-4">
           {/* Location Selector - Swiggy/Zomato Style */}
-          <div className="relative">
-            <Button
-              variant="ghost"
-              onClick={() => setIsLocationSelectorOpen(true)}
-              className="flex items-center space-x-2 text-left hover:bg-gray-50 px-2 py-1 h-auto"
-            >
-              <MapPin className="w-4 h-4 text-kitchen-500" />
-              <div className="flex flex-col">
-                <div className="flex items-center space-x-1">
-                  <span className="text-sm font-medium text-gray-800 max-w-32 truncate">
-                    {currentLocation}
-                  </span>
-                  <ChevronDown className="w-3 h-3 text-gray-500" />
+          {user?.role === 'customer' && (
+            <div className="relative">
+              <Button
+                variant="ghost"
+                onClick={() => setIsLocationSelectorOpen(true)}
+                className="flex items-center space-x-2 text-left hover:bg-gray-50 px-2 py-1 h-auto"
+              >
+                <MapPin className="w-4 h-4 text-kitchen-500" />
+                <div className="flex flex-col">
+                  <div className="flex items-center space-x-1">
+                    <span className="text-sm font-medium text-gray-800 max-w-32 truncate">
+                      {getDisplayLocation()}
+                    </span>
+                    <ChevronDown className="w-3 h-3 text-gray-500" />
+                  </div>
+                  {getDisplayLocation() !== "Select Location" && (
+                    <span className="text-xs text-gray-500">Delivering to</span>
+                  )}
                 </div>
-                {currentLocation !== "Select Location" && (
-                  <span className="text-xs text-gray-500">Delivering to</span>
-                )}
-              </div>
-            </Button>
-          </div>
+              </Button>
+            </div>
+          )}
 
           <Link to="/" className="flex items-center">
             <span className="text-xl font-bold text-kitchen-500 hidden sm:block">KitchenCart Connect</span>
@@ -153,10 +169,35 @@ const Header = () => {
           {isAuthenticated ? (
             <div className="flex items-center space-x-2">
               <span className="text-sm text-gray-600 hidden sm:block">Welcome, {user?.name}</span>
-              <Button variant="outline" onClick={handleLogout} size="sm">
-                <FaSignOutAlt className="w-4 h-4 mr-1" />
-                <span className="hidden sm:inline">Logout</span>
-              </Button>
+              
+              {/* User Menu Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="flex items-center space-x-1">
+                    <User className="w-4 h-4" />
+                    <ChevronDown className="w-3 h-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48 bg-white border shadow-lg">
+                  {user?.role === 'customer' && (
+                    <>
+                      <DropdownMenuItem onClick={() => navigate('/profile')} className="cursor-pointer">
+                        <User className="w-4 h-4 mr-2" />
+                        Profile & Settings
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate('/orders')} className="cursor-pointer">
+                        <FaShoppingCart className="w-4 h-4 mr-2" />
+                        My Orders
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600">
+                    <FaSignOutAlt className="w-4 h-4 mr-2" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           ) : (
             <Button onClick={handleLogin} className="bg-kitchen-500 hover:bg-kitchen-600 text-white">
@@ -188,7 +229,7 @@ const Header = () => {
         isOpen={isLocationSelectorOpen}
         onClose={() => setIsLocationSelectorOpen(false)}
         onLocationSelect={handleLocationSelect}
-        currentLocation={currentLocation}
+        currentLocation={getDisplayLocation()}
       />
     </header>
   );

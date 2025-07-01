@@ -1,9 +1,11 @@
 
 import { useState, useEffect } from "react";
+import { useAppDispatch, useAppSelector } from "@/hooks/redux";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MapPin, Search, Navigation, X } from "lucide-react";
+import { updateSelectedLocation } from "@/store/authSlice";
 
 interface LocationSelectorProps {
   isOpen: boolean;
@@ -43,6 +45,8 @@ const allLocations = [
 ];
 
 const LocationSelector = ({ isOpen, onClose, onLocationSelect, currentLocation }: LocationSelectorProps) => {
+  const dispatch = useAppDispatch();
+  const { user } = useAppSelector((state) => state.auth);
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredLocations, setFilteredLocations] = useState(allLocations);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
@@ -60,6 +64,7 @@ const LocationSelector = ({ isOpen, onClose, onLocationSelect, currentLocation }
   }, [searchQuery]);
 
   const handleLocationClick = (locationName: string) => {
+    dispatch(updateSelectedLocation(locationName));
     onLocationSelect(locationName);
     setSearchQuery("");
   };
@@ -72,6 +77,7 @@ const LocationSelector = ({ isOpen, onClose, onLocationSelect, currentLocation }
           const { latitude, longitude } = position.coords;
           // In a real app, you'd reverse geocode these coordinates
           const locationString = `Current Location (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
+          dispatch(updateSelectedLocation(locationString));
           onLocationSelect(locationString);
           setIsLoadingLocation(false);
         },
@@ -84,6 +90,14 @@ const LocationSelector = ({ isOpen, onClose, onLocationSelect, currentLocation }
       setIsLoadingLocation(false);
     }
   };
+
+  // Get user's saved locations
+  const savedLocations = user?.addresses?.map(addr => ({
+    name: addr.area,
+    area: addr.city,
+    type: 'saved' as const,
+    fullAddress: addr.fullAddress
+  })) || [];
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -124,6 +138,28 @@ const LocationSelector = ({ isOpen, onClose, onLocationSelect, currentLocation }
               <span className="text-xs text-gray-500">Using GPS</span>
             </div>
           </Button>
+
+          {/* Saved Addresses */}
+          {!searchQuery && savedLocations.length > 0 && (
+            <div className="mb-4">
+              <h3 className="text-sm font-medium text-gray-700 mb-2 uppercase tracking-wide">
+                Saved Addresses
+              </h3>
+              {savedLocations.map((location, index) => (
+                <div
+                  key={index}
+                  className="flex items-center p-3 hover:bg-gray-50 cursor-pointer rounded-md"
+                  onClick={() => handleLocationClick(location.name)}
+                >
+                  <MapPin className="w-4 h-4 mr-3 text-kitchen-500" />
+                  <div>
+                    <div className="font-medium text-gray-800">{location.name}</div>
+                    <div className="text-sm text-gray-500">{location.fullAddress}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Recent Locations */}
           {!searchQuery && (
