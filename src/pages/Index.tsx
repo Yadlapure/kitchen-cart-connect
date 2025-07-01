@@ -1,16 +1,12 @@
-import { useState } from "react";
+
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAppSelector } from "@/hooks/redux";
 import Header from "@/components/Header";
-import LocationSearch from "@/components/LocationSearch";
 
 const Index = () => {
   const { user } = useAppSelector((state) => state.auth);
   const navigate = useNavigate();
-  const [searchLocation, setSearchLocation] = useState("");
-  const [currentLocation, setCurrentLocation] = useState<string | null>(null);
-  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
   // Only redirect if user is merchant/admin (they have their own dashboards)
   if (user?.role === 'merchant') {
@@ -28,39 +24,7 @@ const Index = () => {
     return null;
   }
 
-  const getCurrentLocation = () => {
-    setIsLoadingLocation(true);
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          // In a real app, you'd reverse geocode these coordinates
-          const locationString = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
-          setCurrentLocation(locationString);
-          setIsLoadingLocation(false);
-        },
-        (error) => {
-          console.error("Error getting location:", error);
-          setCurrentLocation("Location access denied");
-          setIsLoadingLocation(false);
-        }
-      );
-    } else {
-      setCurrentLocation("Geolocation not supported");
-      setIsLoadingLocation(false);
-    }
-  };
-
-  const handleLocationSelect = (location: string) => {
-    setSearchLocation(location);
-  };
-
   const handleStartRequest = () => {
-    if (!currentLocation && !searchLocation) {
-      alert("Please select your location first");
-      return;
-    }
-    
     navigate('/request');
   };
 
@@ -76,27 +40,18 @@ const Index = () => {
             </h1>
             <p className="max-w-2xl mx-auto mb-6 text-white/90">
               Request kitchen items from local merchants and get them delivered to your doorstep. 
-              First, let us know your location to find nearby merchants.
+              Select your location from the top-left corner to find nearby merchants.
             </p>
-          </div>
-
-          {/* Location Selection */}
-          <LocationSearch
-            onLocationSelect={handleLocationSelect}
-            currentLocation={currentLocation}
-            onGetCurrentLocation={getCurrentLocation}
-            isLoadingLocation={isLoadingLocation}
-          />
-
-          {/* Start Request Button */}
-          <div className="max-w-2xl mx-auto">
-            <Button
-              onClick={handleStartRequest}
-              disabled={!currentLocation && !searchLocation}
-              className="w-full bg-kitchen-500 hover:bg-kitchen-600 py-3 text-lg"
-            >
-              Start Request
-            </Button>
+            
+            {/* Start Request Button */}
+            <div className="max-w-md mx-auto">
+              <Button
+                onClick={handleStartRequest}
+                className="w-full bg-white text-kitchen-600 hover:bg-gray-100 py-3 text-lg font-semibold"
+              >
+                Start Request
+              </Button>
+            </div>
           </div>
         </section>
 
@@ -107,7 +62,7 @@ const Index = () => {
               <div className="flex items-center justify-center w-12 h-12 mb-4 text-white rounded-full bg-kitchen-500">1</div>
               <h3 className="mb-2 text-lg font-semibold">Set Location</h3>
               <p className="text-gray-600">
-                Choose your current location or search for your city to find nearby merchants.
+                Choose your location from the top-left corner to find nearby merchants in your area.
               </p>
             </div>
             

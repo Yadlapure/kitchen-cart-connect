@@ -1,10 +1,11 @@
-
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { useAppSelector, useAppDispatch } from "@/hooks/redux";
 import { logout } from "@/store/authSlice";
 import { FaShoppingCart, FaBars, FaSignOutAlt, FaSignInAlt } from 'react-icons/fa';
+import { MapPin, ChevronDown } from 'lucide-react';
+import LocationSelector from './LocationSelector';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -12,6 +13,8 @@ const Header = () => {
   const { cart } = useAppSelector((state) => state.app);
   const { user, isAuthenticated } = useAppSelector((state) => state.auth);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLocationSelectorOpen, setIsLocationSelectorOpen] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState<string>("Select Location");
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -23,6 +26,11 @@ const Header = () => {
 
   const handleLogin = () => {
     navigate('/login');
+  };
+
+  const handleLocationSelect = (location: string) => {
+    setCurrentLocation(location);
+    setIsLocationSelectorOpen(false);
   };
 
   function getNavLinks() {
@@ -92,9 +100,32 @@ const Header = () => {
   return (
     <header className="sticky top-0 z-50 w-full bg-white border-b shadow-sm">
       <div className="container flex items-center justify-between h-16 px-4 mx-auto sm:px-6">
-        <div className="flex items-center">
+        <div className="flex items-center space-x-4">
+          {/* Location Selector - Swiggy/Zomato Style */}
+          <div className="relative">
+            <Button
+              variant="ghost"
+              onClick={() => setIsLocationSelectorOpen(true)}
+              className="flex items-center space-x-2 text-left hover:bg-gray-50 px-2 py-1 h-auto"
+            >
+              <MapPin className="w-4 h-4 text-kitchen-500" />
+              <div className="flex flex-col">
+                <div className="flex items-center space-x-1">
+                  <span className="text-sm font-medium text-gray-800 max-w-32 truncate">
+                    {currentLocation}
+                  </span>
+                  <ChevronDown className="w-3 h-3 text-gray-500" />
+                </div>
+                {currentLocation !== "Select Location" && (
+                  <span className="text-xs text-gray-500">Delivering to</span>
+                )}
+              </div>
+            </Button>
+          </div>
+
           <Link to="/" className="flex items-center">
-            <span className="text-xl font-bold text-kitchen-500">KitchenCart Connect</span>
+            <span className="text-xl font-bold text-kitchen-500 hidden sm:block">KitchenCart Connect</span>
+            <span className="text-lg font-bold text-kitchen-500 sm:hidden">KCC</span>
           </Link>
         </div>
 
@@ -121,16 +152,16 @@ const Header = () => {
 
           {isAuthenticated ? (
             <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-600">Welcome, {user?.name}</span>
+              <span className="text-sm text-gray-600 hidden sm:block">Welcome, {user?.name}</span>
               <Button variant="outline" onClick={handleLogout} size="sm">
                 <FaSignOutAlt className="w-4 h-4 mr-1" />
-                Logout
+                <span className="hidden sm:inline">Logout</span>
               </Button>
             </div>
           ) : (
             <Button onClick={handleLogin} className="bg-kitchen-500 hover:bg-kitchen-600 text-white">
               <FaSignInAlt className="w-4 h-4 mr-1" />
-              Login
+              <span className="hidden sm:inline">Login</span>
             </Button>
           )}
 
@@ -151,6 +182,14 @@ const Header = () => {
           </div>
         </div>
       )}
+
+      {/* Location Selector Modal */}
+      <LocationSelector
+        isOpen={isLocationSelectorOpen}
+        onClose={() => setIsLocationSelectorOpen(false)}
+        onLocationSelect={handleLocationSelect}
+        currentLocation={currentLocation}
+      />
     </header>
   );
 };
