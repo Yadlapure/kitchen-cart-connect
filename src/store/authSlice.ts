@@ -39,7 +39,7 @@ const dummyUsers: Record<string, User> = {
     name: 'Admin User'
   },
   'delivery@test.com': {
-    id: '4',
+    id: 'db1', // Changed from '4' to 'db1' to match delivery boy records
     username: 'delivery@test.com',
     role: 'delivery_boy',
     name: 'Raj Kumar'
