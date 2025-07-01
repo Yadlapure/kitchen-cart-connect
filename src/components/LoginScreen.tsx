@@ -36,7 +36,8 @@ const LoginScreen = () => {
       
       switch (result.role) {
         case 'customer':
-          targetPath = redirectPath || '/request';
+          // If there's a redirect path, use it; otherwise go to home page
+          targetPath = redirectPath || '/';
           break;
         case 'merchant':
           targetPath = '/merchant/requests';

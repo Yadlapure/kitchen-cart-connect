@@ -16,6 +16,7 @@ const DeliveryBoyPage = () => {
   const navigate = useNavigate();
   const [lastOrderCount, setLastOrderCount] = useState(0);
   const [hasShownInitialOrders, setHasShownInitialOrders] = useState(false);
+  const [notifiedOrders, setNotifiedOrders] = useState<Set<string>>(new Set());
   
   useEffect(() => {
     if (user?.role !== 'delivery_boy') {
@@ -137,7 +138,25 @@ const DeliveryBoyPage = () => {
   };
 
   const handleStartDelivery = (orderId: string) => {
-    toast.success("📱 Customer and merchant notified: Delivery boy is on the way!");
+    // Add to notified orders to prevent duplicate notifications
+    setNotifiedOrders(prev => new Set([...prev, orderId]));
+    
+    // Update order with delivery notification status
+    dispatch(updateOrder({
+      orderId,
+      updates: {
+        status: 'delivering',
+        updatedAt: new Date().toISOString()
+      }
+    }));
+    
+    // Show success message to delivery boy
+    toast.success("✅ Customer and merchant have been notified that you're on the way!", {
+      duration: 5000,
+      description: "They will receive real-time updates about your delivery progress."
+    });
+    
+    console.log(`📱 DELIVERY NOTIFICATION: Customer and merchant notified for order ${orderId}`);
   };
 
   return (
@@ -254,10 +273,15 @@ const DeliveryBoyPage = () => {
                         <Button
                           onClick={() => handleStartDelivery(order.id)}
                           variant="outline"
-                          className="bg-blue-100 hover:bg-blue-200 text-blue-700 border-blue-300"
+                          className={`${
+                            notifiedOrders.has(order.id) 
+                              ? 'bg-green-100 hover:bg-green-200 text-green-700 border-green-300' 
+                              : 'bg-blue-100 hover:bg-blue-200 text-blue-700 border-blue-300'
+                          }`}
                           size="sm"
+                          disabled={notifiedOrders.has(order.id)}
                         >
-                          📱 Notify Customer - On My Way
+                          {notifiedOrders.has(order.id) ? '✅ Customer Notified' : '📱 Notify Customer - On My Way'}
                         </Button>
                       </div>
                     </div>
