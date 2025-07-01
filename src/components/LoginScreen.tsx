@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 const LoginScreen = () => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const dispatch = useAppDispatch();
@@ -23,34 +23,15 @@ const LoginScreen = () => {
     console.log('Login form submitted');
     
     try {
-      // Properly await the async thunk
-      const result = await dispatch(login({ username, password })).unwrap();
+      const result = dispatch(login({ email, password }));
       
       toast.success('Login successful!');
       
       // Get redirect path from URL params
       const redirectPath = searchParams.get('redirect');
       
-      // Determine where to redirect based on user role
-      let targetPath: string;
-      
-      switch (result.role) {
-        case 'customer':
-          // If there's a redirect path, use it; otherwise go to home page
-          targetPath = redirectPath || '/';
-          break;
-        case 'merchant':
-          targetPath = '/merchant/requests';
-          break;
-        case 'admin':
-          targetPath = '/admin/dashboard';
-          break;
-        case 'delivery_boy':
-          targetPath = '/delivery';
-          break;
-        default:
-          targetPath = '/';
-      }
+      // Navigate to home page by default, or use redirect path
+      const targetPath = redirectPath || '/';
       
       console.log('Login successful, navigating to:', targetPath);
       
@@ -76,14 +57,14 @@ const LoginScreen = () => {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                 Email
               </label>
               <Input
-                id="username"
+                id="email"
                 type="email"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
                 required
               />

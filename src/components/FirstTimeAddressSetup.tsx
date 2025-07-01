@@ -21,7 +21,7 @@ const FirstTimeAddressSetup = () => {
 
   return (
     <Dialog open={isFirstTimeLogin} onOpenChange={() => {}}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" hideCloseButton>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto [&>button]:hidden">
         <DialogHeader>
           <DialogTitle>Welcome to KitchenCart Connect!</DialogTitle>
           <p className="text-gray-600">
