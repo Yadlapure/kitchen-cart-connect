@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,7 +19,6 @@ import MerchantOrdersPage from "./pages/MerchantOrdersPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import DeliveryBoyPage from "./pages/DeliveryBoyPage";
 import NotFound from "./pages/NotFound";
-import FirstTimeAddressSetup from "@/components/FirstTimeAddressSetup";
 import ProfilePage from "./pages/ProfilePage";
 
 const queryClient = new QueryClient();
@@ -102,9 +102,6 @@ const AppContent = () => {
         {/* Catch-all Route */}
         <Route path="*" element={<NotFound />} />
       </Routes>
-      
-      {/* First Time Address Setup Modal */}
-      <FirstTimeAddressSetup />
     </>
   );
 };

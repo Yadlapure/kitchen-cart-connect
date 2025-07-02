@@ -5,14 +5,23 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { completeFirstTimeSetup } from '@/store/authSlice';
 import AddressForm from './AddressForm';
 
-const FirstTimeAddressSetup = () => {
+interface FirstTimeAddressSetupProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const FirstTimeAddressSetup = ({ isOpen, onClose }: FirstTimeAddressSetupProps) => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
 
   const handleAddressSave = () => {
     dispatch(completeFirstTimeSetup());
-    navigate('/');
+    onClose();
+  };
+
+  const handleClose = () => {
+    onClose();
   };
 
   // Only show if user is customer and has no saved addresses
@@ -23,8 +32,8 @@ const FirstTimeAddressSetup = () => {
   }
 
   return (
-    <Dialog open={shouldShow} onOpenChange={() => {}}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto [&>button]:hidden">
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Welcome to KitchenCart Connect!</DialogTitle>
           <p className="text-gray-600">
