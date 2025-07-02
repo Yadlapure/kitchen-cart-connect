@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Header from "@/components/Header";
 import DefaultItemSelector from "@/components/DefaultItemSelector";
 import ProductRequestForm from "@/components/ProductRequestForm";
@@ -136,8 +137,20 @@ const RequestPage = () => {
           <div className="lg:col-span-2">
             {step === 'add-products' && (
               <div className="space-y-6">
-                <DefaultItemSelector onAddItem={handleAddProduct} />
-                <ProductRequestForm onAdd={handleAddProduct} />
+                <Tabs defaultValue="common-items" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="common-items">Choose from Common Items</TabsTrigger>
+                    <TabsTrigger value="custom-item">Add Custom Item</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="common-items" className="mt-6">
+                    <DefaultItemSelector onAddItem={handleAddProduct} />
+                  </TabsContent>
+                  
+                  <TabsContent value="custom-item" className="mt-6">
+                    <ProductRequestForm onAdd={handleAddProduct} />
+                  </TabsContent>
+                </Tabs>
                 
                 {cart.length > 0 && (
                   <Card className="border-kitchen-200">

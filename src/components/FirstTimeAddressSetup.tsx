@@ -8,19 +8,22 @@ import AddressForm from './AddressForm';
 const FirstTimeAddressSetup = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { isFirstTimeLogin, user } = useAppSelector((state) => state.auth);
+  const { user } = useAppSelector((state) => state.auth);
 
   const handleAddressSave = () => {
     dispatch(completeFirstTimeSetup());
     navigate('/');
   };
 
-  if (!isFirstTimeLogin || user?.role !== 'customer') {
+  // Only show if user is customer and has no saved addresses
+  const shouldShow = user?.role === 'customer' && (!user?.addresses || user.addresses.length === 0);
+
+  if (!shouldShow) {
     return null;
   }
 
   return (
-    <Dialog open={isFirstTimeLogin} onOpenChange={() => {}}>
+    <Dialog open={shouldShow} onOpenChange={() => {}}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto [&>button]:hidden">
         <DialogHeader>
           <DialogTitle>Welcome to KitchenCart Connect!</DialogTitle>
