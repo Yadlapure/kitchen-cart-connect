@@ -1,6 +1,8 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Product } from "@/store/appSlice";
 import { useAppDispatch } from "@/hooks/redux";
 import { addToCart, updateQuantity, removeFromCart } from "@/store/appSlice";
@@ -15,17 +17,20 @@ interface ProductCardProps {
 const ProductCard = ({ product, editable = true, isOrderView = false }: ProductCardProps) => {
   const dispatch = useAppDispatch();
   const [quantity, setQuantity] = useState(product.quantity || 1);
+  const [unit, setUnit] = useState(product.unit);
   const [name, setName] = useState(product.name);
 
-  // Ensure quantity state stays in sync with product props
+  // Ensure quantity and unit state stays in sync with product props
   useEffect(() => {
     setQuantity(product.quantity || 1);
-  }, [product.quantity]);
+    setUnit(product.unit);
+  }, [product.quantity, product.unit]);
 
   const handleAddToCart = () => {
     dispatch(addToCart({
       ...product,
-      quantity
+      quantity,
+      unit
     }));
   };
 
@@ -48,12 +53,29 @@ const ProductCard = ({ product, editable = true, isOrderView = false }: ProductC
   };
 
   const handleQuantityChange = () => {
-    dispatch(updateQuantity({ productId: product.id, quantity }));
+    // Update both quantity and unit when in cart editing mode
+    const updatedProduct = {
+      ...product,
+      quantity,
+      unit
+    };
+    
+    // Remove the old product and add the updated one
+    dispatch(removeFromCart(product.id));
+    dispatch(addToCart(updatedProduct));
   };
 
   const handleRemoveItem = () => {
     dispatch(removeFromCart(product.id));
   };
+
+  const unitOptions = [
+    { value: 'piece', label: 'Piece' },
+    { value: 'kg', label: 'Kilogram (kg)' },
+    { value: 'gram', label: 'Gram' },
+    { value: 'liter', label: 'Liter' },
+    { value: 'number', label: 'Number' }
+  ];
 
   return (
     <Card className={`border ${isOrderView && product.updatedPrice ? 'border-kitchen-500' : ''}`}>
@@ -108,23 +130,49 @@ const ProductCard = ({ product, editable = true, isOrderView = false }: ProductC
             )}
           </div>
           
-          <div className="flex items-center justify-between">
-            <div className="flex items-center border rounded">
-              <button 
-                onClick={decrementQuantity}
-                className="px-3 py-1 text-gray-600 border-r hover:bg-gray-100"
-                type="button"
-              >
-                -
-              </button>
-              <span className="px-3 py-1">{quantity}</span>
-              <button 
-                onClick={incrementQuantity}
-                className="px-3 py-1 text-gray-600 border-l hover:bg-gray-100"
-                type="button"
-              >
-                +
-              </button>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              {/* Quantity Controls */}
+              <div className="flex items-center border rounded">
+                <button 
+                  onClick={decrementQuantity}
+                  className="px-3 py-1 text-gray-600 border-r hover:bg-gray-100"
+                  type="button"
+                >
+                  -
+                </button>
+                <span className="px-3 py-1">{quantity}</span>
+                <button 
+                  onClick={incrementQuantity}
+                  className="px-3 py-1 text-gray-600 border-l hover:bg-gray-100"
+                  type="button"
+                >
+                  +
+                </button>
+              </div>
+              
+              {/* Unit Selector - Show when editable and not in order view */}
+              {editable && !isOrderView && (
+                <Select value={unit} onValueChange={(value) => setUnit(value as any)}>
+                  <SelectTrigger className="w-24">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {unitOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              
+              {/* Show unit as text when not editable */}
+              {(!editable || isOrderView) && (
+                <span className="text-sm text-gray-600 px-2 py-1 bg-gray-100 rounded">
+                  {unitOptions.find(opt => opt.value === unit)?.label || unit}
+                </span>
+              )}
             </div>
             
             {editable && !isOrderView ? (
