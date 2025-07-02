@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -138,9 +139,19 @@ const RequestPage = () => {
             {step === 'add-products' && (
               <div className="space-y-6">
                 <Tabs defaultValue="common-items" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="common-items">Choose from Common Items</TabsTrigger>
-                    <TabsTrigger value="custom-item">Add Custom Item</TabsTrigger>
+                  <TabsList className="grid w-full grid-cols-2 h-11 bg-white border border-gray-200 rounded-lg p-1">
+                    <TabsTrigger 
+                      value="common-items" 
+                      className="data-[state=active]:bg-kitchen-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-md font-medium transition-all"
+                    >
+                      Choose from Common Items
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="custom-item"
+                      className="data-[state=active]:bg-kitchen-500 data-[state=active]:text-white data-[state=active]:shadow-sm rounded-md font-medium transition-all"
+                    >
+                      Add Custom Item
+                    </TabsTrigger>
                   </TabsList>
                   
                   <TabsContent value="common-items" className="mt-6">
@@ -204,13 +215,14 @@ const RequestPage = () => {
                       <ProductCard 
                         key={product.id} 
                         product={product} 
-                        editable={false}
+                        editable={true}
                       />
                     ))}
                     
                     <div className="flex gap-4 pt-4 border-t">
                       <Button
                         onClick={handleProceedToMerchants}
+                        disabled={cart.length === 0}
                         className="flex-1 bg-kitchen-500 hover:bg-kitchen-600"
                       >
                         {!user ? "Login to Choose Merchants" : "Choose Merchants"}
@@ -336,109 +348,101 @@ const RequestPage = () => {
             )}
           </div>
 
-          {/* Sidebar */}
-          <div>
-            <Card className="sticky top-24">
-              <CardHeader>
-                <CardTitle>Request Progress</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span>Items in cart:</span>
-                  <span className="font-medium">{totalItems}</span>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <span>Merchants selected:</span>
-                  <span className="font-medium">{selectedMerchants.length}</span>
-                </div>
+          {/* Sidebar - Show for cart view and later steps */}
+          {(step === 'view-cart' || step === 'select-merchants' || step === 'review') && (
+            <div>
+              <Card className="sticky top-24">
+                <CardHeader>
+                  <CardTitle>Request Progress</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span>Items in cart:</span>
+                    <span className="font-medium">{totalItems}</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span>Merchants selected:</span>
+                    <span className="font-medium">{selectedMerchants.length}</span>
+                  </div>
 
-                <div className="space-y-2">
-                  {step === 'add-products' && (
-                    <Button 
-                      onClick={handleViewCart}
-                      disabled={cart.length === 0}
-                      className="w-full bg-kitchen-500 hover:bg-kitchen-600"
-                    >
-                      View Cart ({totalItems})
-                    </Button>
-                  )}
-                  
-                  {step === 'view-cart' && (
-                    <>
-                      <Button 
-                        onClick={handleProceedToMerchants}
-                        disabled={cart.length === 0}
-                        className="w-full bg-kitchen-500 hover:bg-kitchen-600"
-                      >
-                        {!user ? "Login to Choose Merchants" : "Choose Merchants"}
-                      </Button>
-                      <Button 
-                        variant="outline"
-                        onClick={() => setStep('add-products')}
-                        className="w-full"
-                      >
-                        Add More Items
-                      </Button>
-                    </>
-                  )}
-                  
-                  {step === 'select-merchants' && (
-                    <>
-                      {selectedMerchants.length > 0 && (
+                  <div className="space-y-2">
+                    {step === 'view-cart' && (
+                      <>
                         <Button 
-                          onClick={() => setStep('review')}
+                          onClick={handleProceedToMerchants}
+                          disabled={cart.length === 0}
                           className="w-full bg-kitchen-500 hover:bg-kitchen-600"
                         >
-                          Continue to Review
+                          {!user ? "Login to Choose Merchants" : "Choose Merchants"}
                         </Button>
-                      )}
-                      <Button 
-                        variant="outline"
-                        onClick={() => setStep('view-cart')}
-                        className="w-full"
-                      >
-                        Back to Cart
-                      </Button>
-                    </>
-                  )}
-                  
-                  {step === 'review' && (
-                    <>
-                      <Button 
-                        onClick={handleSubmitRequest}
-                        className="w-full bg-kitchen-500 hover:bg-kitchen-600"
-                        disabled={cart.length === 0 || selectedMerchants.length === 0}
-                      >
-                        Send Request to Merchants
-                      </Button>
-                      <Button 
-                        variant="outline"
-                        onClick={() => setStep('select-merchants')}
-                        className="w-full"
-                      >
-                        Back to Merchant Selection
-                      </Button>
-                    </>
-                  )}
-                </div>
-
-                {cart.length > 0 && (
-                  <div className="pt-4 border-t">
-                    <p className="text-sm text-gray-600 mb-2">Quick actions:</p>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => dispatch(clearCart())}
-                      className="w-full text-red-600 hover:text-red-700"
-                    >
-                      Clear All Items
-                    </Button>
+                        <Button 
+                          variant="outline"
+                          onClick={() => setStep('add-products')}
+                          className="w-full"
+                        >
+                          Add More Items
+                        </Button>
+                      </>
+                    )}
+                    
+                    {step === 'select-merchants' && (
+                      <>
+                        {selectedMerchants.length > 0 && (
+                          <Button 
+                            onClick={() => setStep('review')}
+                            className="w-full bg-kitchen-500 hover:bg-kitchen-600"
+                          >
+                            Continue to Review
+                          </Button>
+                        )}
+                        <Button 
+                          variant="outline"
+                          onClick={() => setStep('view-cart')}
+                          className="w-full"
+                        >
+                          Back to Cart
+                        </Button>
+                      </>
+                    )}
+                    
+                    {step === 'review' && (
+                      <>
+                        <Button 
+                          onClick={handleSubmitRequest}
+                          className="w-full bg-kitchen-500 hover:bg-kitchen-600"
+                          disabled={cart.length === 0 || selectedMerchants.length === 0}
+                        >
+                          Send Request to Merchants
+                        </Button>
+                        <Button 
+                          variant="outline"
+                          onClick={() => setStep('select-merchants')}
+                          className="w-full"
+                        >
+                          Back to Merchant Selection
+                        </Button>
+                      </>
+                    )}
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+
+                  {cart.length > 0 && (
+                    <div className="pt-4 border-t">
+                      <p className="text-sm text-gray-600 mb-2">Quick actions:</p>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => dispatch(clearCart())}
+                        className="w-full text-red-600 hover:text-red-700"
+                      >
+                        Clear All Items
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </div>
       </main>
     </div>
