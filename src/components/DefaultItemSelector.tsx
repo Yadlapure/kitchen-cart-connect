@@ -12,14 +12,12 @@ interface DefaultItemSelectorProps {
   onAddItem: (product: Product) => void;
 }
 
-type UnitType = 'gram' | 'kg' | 'number' | 'liter' | 'piece';
-
 const DefaultItemSelector = ({ onAddItem }: DefaultItemSelectorProps) => {
   const { defaultItems } = useAppSelector((state) => state.app);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedItem, setSelectedItem] = useState<DefaultItem | null>(null);
   const [quantity, setQuantity] = useState(1);
-  const [unit, setUnit] = useState<UnitType>('piece');
+  const [unit, setUnit] = useState<'gram' | 'kg' | 'number' | 'liter' | 'piece'>('piece');
   const [expectedPrice, setExpectedPrice] = useState("");
 
   const categories = Array.from(new Set(defaultItems.map(item => item.category)));
@@ -30,7 +28,7 @@ const DefaultItemSelector = ({ onAddItem }: DefaultItemSelectorProps) => {
 
   const handleItemSelect = (item: DefaultItem) => {
     setSelectedItem(item);
-    setUnit(item.commonUnits[0] as UnitType);
+    setUnit(item.commonUnits[0]);
     setQuantity(item.suggestedQuantity || 1);
   };
 
@@ -113,7 +111,7 @@ const DefaultItemSelector = ({ onAddItem }: DefaultItemSelectorProps) => {
               
               <div>
                 <label className="block text-sm font-medium mb-1">Unit</label>
-                <Select value={unit} onValueChange={(value) => setUnit(value as UnitType)}>
+                <Select value={unit} onValueChange={(value) => setUnit(value as any)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>

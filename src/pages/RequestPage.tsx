@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAppSelector } from '@/hooks/redux';
 import Header from "@/components/Header";
@@ -16,7 +15,7 @@ const RequestPage = () => {
   const { data: products, isLoading, isError } = useGetProductsQuery(user?.id);
   const [activeTab, setActiveTab] = useState<string>('fruits-and-vegetables');
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const { cart } = useAppSelector((state) => state.app);
+  const { cartItems } = useAppSelector((state) => state.app);
   const [currentStep, setCurrentStep] = useState(1);
 
   useEffect(() => {
@@ -116,9 +115,9 @@ const RequestPage = () => {
           </div>
 
           {/* Cart/Progress Sidebar - Show when cart has items or progress is active */}
-          {(cart.length > 0 || currentStep > 1) && (
+          {(cartItems.length > 0 || currentStep > 1) && (
             <div className="lg:w-96">
-              {cart.length > 0 && (
+              {cartItems.length > 0 && (
                 <Cart currentStep={currentStep} setCurrentStep={setCurrentStep} />
               )}
               {currentStep > 1 && (
