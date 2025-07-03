@@ -64,7 +64,7 @@ const LocationSelector = ({ isOpen, onClose, onLocationSelect, currentLocation }
   }, [searchQuery]);
 
   const handleLocationClick = (locationName: string) => {
-    dispatch(updateSelectedLocation({ location: locationName }));
+    dispatch(updateSelectedLocation(locationName));
     onLocationSelect(locationName);
     setSearchQuery("");
   };
@@ -77,10 +77,7 @@ const LocationSelector = ({ isOpen, onClose, onLocationSelect, currentLocation }
           const { latitude, longitude } = position.coords;
           // In a real app, you'd reverse geocode these coordinates
           const locationString = `Current Location (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
-          dispatch(updateSelectedLocation({ 
-            location: locationString, 
-            coordinates: { lat: latitude, lng: longitude }
-          }));
+          dispatch(updateSelectedLocation(locationString));
           onLocationSelect(locationString);
           setIsLoadingLocation(false);
         },

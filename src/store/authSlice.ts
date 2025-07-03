@@ -9,10 +9,6 @@ export interface User {
   role: 'customer' | 'merchant' | 'admin' | 'delivery_boy';
   addresses?: Address[];
   selectedLocation?: string;
-  currentCoordinates?: {
-    lat: number;
-    lng: number;
-  };
 }
 
 export interface Address {
@@ -27,10 +23,6 @@ export interface Address {
   instructions?: string;
   fullAddress: string;
   isDefault: boolean;
-  coordinates?: {
-    lat: number;
-    lng: number;
-  };
 }
 
 interface AuthState {
@@ -126,12 +118,6 @@ const authSlice = createSlice({
         
         // Set selected location from the address area
         state.user.selectedLocation = action.payload.area;
-        
-        // Update coordinates if provided
-        if (action.payload.coordinates) {
-          state.user.currentCoordinates = action.payload.coordinates;
-        }
-        
         state.isFirstTimeLogin = false;
       }
     },
@@ -144,12 +130,8 @@ const authSlice = createSlice({
         if (deletingDefault && state.user.addresses.length > 0) {
           state.user.addresses[0].isDefault = true;
           state.user.selectedLocation = state.user.addresses[0].area;
-          if (state.user.addresses[0].coordinates) {
-            state.user.currentCoordinates = state.user.addresses[0].coordinates;
-          }
         } else if (state.user.addresses.length === 0) {
           state.user.selectedLocation = undefined;
-          state.user.currentCoordinates = undefined;
         }
       }
     },
@@ -161,23 +143,12 @@ const authSlice = createSlice({
         const defaultAddress = state.user.addresses.find(addr => addr.id === action.payload);
         if (defaultAddress) {
           state.user.selectedLocation = defaultAddress.area;
-          if (defaultAddress.coordinates) {
-            state.user.currentCoordinates = defaultAddress.coordinates;
-          }
         }
       }
     },
-    updateSelectedLocation: (state, action: PayloadAction<{ location: string; coordinates?: { lat: number; lng: number } }>) => {
+    updateSelectedLocation: (state, action: PayloadAction<string>) => {
       if (state.user) {
-        state.user.selectedLocation = action.payload.location;
-        if (action.payload.coordinates) {
-          state.user.currentCoordinates = action.payload.coordinates;
-        }
-      }
-    },
-    updateUserCoordinates: (state, action: PayloadAction<{ lat: number; lng: number }>) => {
-      if (state.user) {
-        state.user.currentCoordinates = action.payload;
+        state.user.selectedLocation = action.payload;
       }
     },
     completeFirstTimeSetup: (state) => {
@@ -193,7 +164,6 @@ export const {
   deleteUserAddress, 
   setDefaultAddress, 
   updateSelectedLocation,
-  updateUserCoordinates,
   completeFirstTimeSetup
 } = authSlice.actions;
 

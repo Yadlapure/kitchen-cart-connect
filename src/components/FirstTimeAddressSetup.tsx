@@ -5,35 +5,23 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { completeFirstTimeSetup } from '@/store/authSlice';
 import AddressForm from './AddressForm';
 
-interface FirstTimeAddressSetupProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
-
-const FirstTimeAddressSetup = ({ isOpen, onClose }: FirstTimeAddressSetupProps) => {
+const FirstTimeAddressSetup = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { user } = useAppSelector((state) => state.auth);
+  const { isFirstTimeLogin, user } = useAppSelector((state) => state.auth);
 
   const handleAddressSave = () => {
     dispatch(completeFirstTimeSetup());
-    onClose();
+    navigate('/');
   };
 
-  const handleClose = () => {
-    onClose();
-  };
-
-  // Only show if user is customer and has no saved addresses
-  const shouldShow = user?.role === 'customer' && (!user?.addresses || user.addresses.length === 0);
-
-  if (!shouldShow) {
+  if (!isFirstTimeLogin || user?.role !== 'customer') {
     return null;
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+    <Dialog open={isFirstTimeLogin} onOpenChange={() => {}}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto [&>button]:hidden">
         <DialogHeader>
           <DialogTitle>Welcome to KitchenCart Connect!</DialogTitle>
           <p className="text-gray-600">
