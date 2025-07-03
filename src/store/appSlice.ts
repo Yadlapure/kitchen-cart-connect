@@ -8,6 +8,7 @@ export interface Product {
   price?: number;
   quantity: number;
   unit: 'gram' | 'kg' | 'number' | 'liter' | 'piece';
+  category?: string;
   isAvailable?: boolean;
   updatedPrice?: number;
   isVerified?: boolean;
