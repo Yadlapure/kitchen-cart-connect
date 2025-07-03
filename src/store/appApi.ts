@@ -1,8 +1,17 @@
 
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { Product } from './appSlice';
 
-// Mock API for products
+interface Product {
+  id: string;
+  name: string;
+  description?: string;
+  price?: number;
+  quantity: number;
+  unit: string;
+  category?: string;
+  isAvailable?: boolean;
+}
+
 export const appApi = createApi({
   reducerPath: 'appApi',
   baseQuery: fetchBaseQuery({
@@ -11,7 +20,6 @@ export const appApi = createApi({
   endpoints: (builder) => ({
     getProducts: builder.query<Product[], string | undefined>({
       queryFn: () => {
-        // Mock products data
         const mockProducts: Product[] = [
           {
             id: '1',

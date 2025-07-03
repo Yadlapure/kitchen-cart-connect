@@ -12,10 +12,7 @@ export const store = configureStore({
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
-      serializableCheck: {
-        ignoredActions: ['app/addOrder', 'app/updateOrder'],
-        ignoredPaths: ['app.orders.createdAt', 'app.orders.updatedAt'],
-      },
+      serializableCheck: false,
     }).concat(appApi.middleware),
 });
 
