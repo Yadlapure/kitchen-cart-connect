@@ -43,10 +43,12 @@ export interface MerchantQuote {
   isQuoteSubmitted?: boolean;
 }
 
+export type OrderStatus = 'requested' | 'quoted' | 'confirmed' | 'processing' | 'delivering' | 'completed' | 'cancelled';
+
 export interface Order {
   id: string;
   products: Product[];
-  status: string;
+  status: OrderStatus;
   total?: number;
   createdAt: string;
   updatedAt: string;
@@ -56,6 +58,10 @@ export interface Order {
   merchantId?: string;
   estimatedDeliveryTime?: string;
   paymentMethod?: string;
+  deliveryBoyId?: string;
+  deliveryAddress?: string;
+  customerPhone?: string;
+  quoteNotes?: string;
 }
 
 export interface DeliveryBoy {
@@ -140,6 +146,15 @@ const appSlice = createSlice({
     },
     clearCart: (state) => {
       state.cart = [];
+    },
+    createOrder: (state, action: PayloadAction<Omit<Order, 'id' | 'createdAt' | 'updatedAt'>>) => {
+      const newOrder: Order = {
+        ...action.payload,
+        id: `order-${Date.now()}`,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      state.orders.push(newOrder);
     },
     verifyProduct: (state, action: PayloadAction<{
       orderId: string;
@@ -237,7 +252,7 @@ const appSlice = createSlice({
     },
     updateDeliveryStatus: (state, action: PayloadAction<{
       orderId: string;
-      status: string;
+      status: OrderStatus;
     }>) => {
       const { orderId, status } = action.payload;
       const order = state.orders.find(o => o.id === orderId);
@@ -254,6 +269,7 @@ export const {
   removeFromCart,
   updateQuantity,
   clearCart,
+  createOrder,
   verifyProduct,
   submitMerchantQuote,
   selectMerchantQuote,
