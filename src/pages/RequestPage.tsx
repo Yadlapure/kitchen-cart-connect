@@ -6,34 +6,96 @@ import ProductCard from "@/components/ProductCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Product } from '@/store/appSlice';
-import { useGetProductsQuery, ApiProduct } from '@/store/appApi';
 import Cart from '@/components/Cart';
 import RequestProgress from '@/components/RequestProgress';
 import LocationSetupHandler from '@/components/LocationSetupHandler';
 
 const RequestPage = () => {
   const { user } = useAppSelector((state) => state.auth);
-  const { data: apiProducts, isLoading, isError } = useGetProductsQuery(user?.id);
   const [activeTab, setActiveTab] = useState<string>('fruits-and-vegetables');
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const { cart } = useAppSelector((state) => state.app);
   const [currentStep, setCurrentStep] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Mock products data
+  const mockProducts: Product[] = [
+    {
+      id: '1',
+      name: 'Fresh Bananas',
+      description: 'Ripe yellow bananas',
+      quantity: 1,
+      unit: 'kg',
+      category: 'fruits-and-vegetables'
+    },
+    {
+      id: '2',
+      name: 'Red Apples',
+      description: 'Crisp red apples',
+      quantity: 1,
+      unit: 'kg',
+      category: 'fruits-and-vegetables'
+    },
+    {
+      id: '3',
+      name: 'Fresh Milk',
+      description: 'Whole milk 1L',
+      quantity: 1,
+      unit: 'liter',
+      category: 'dairy-and-bakery'
+    },
+    {
+      id: '4',
+      name: 'White Bread',
+      description: 'Fresh white bread loaf',
+      quantity: 1,
+      unit: 'piece',
+      category: 'dairy-and-bakery'
+    },
+    {
+      id: '5',
+      name: 'Basmati Rice',
+      description: 'Premium basmati rice',
+      quantity: 1,
+      unit: 'kg',
+      category: 'staples'
+    },
+    {
+      id: '6',
+      name: 'Cooking Oil',
+      description: 'Sunflower cooking oil',
+      quantity: 1,
+      unit: 'liter',
+      category: 'staples'
+    },
+    {
+      id: '7',
+      name: 'Potato Chips',
+      description: 'Crispy potato chips',
+      quantity: 1,
+      unit: 'piece',
+      category: 'snacks-and-beverages'
+    },
+    {
+      id: '8',
+      name: 'Cola',
+      description: 'Refreshing cola drink',
+      quantity: 1,
+      unit: 'liter',
+      category: 'snacks-and-beverages'
+    }
+  ];
 
   useEffect(() => {
-    if (apiProducts) {
-      // Convert API products to app products
-      const products: Product[] = apiProducts.map((apiProduct: ApiProduct) => ({
-        id: apiProduct.id,
-        name: apiProduct.name,
-        description: apiProduct.description,
-        quantity: apiProduct.quantity,
-        unit: apiProduct.unit,
-        category: apiProduct.category
-      }));
-      
-      setFilteredProducts(products.filter(product => product.category === activeTab));
-    }
-  }, [apiProducts, activeTab]);
+    // Simulate loading
+    setIsLoading(true);
+    const timer = setTimeout(() => {
+      setFilteredProducts(mockProducts.filter(product => product.category === activeTab));
+      setIsLoading(false);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [activeTab]);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -55,17 +117,6 @@ const RequestPage = () => {
               </div>
             ))}
           </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <div className="container mx-auto px-4 py-6">
-          <p className="text-red-500">Error fetching products.</p>
         </div>
       </div>
     );
