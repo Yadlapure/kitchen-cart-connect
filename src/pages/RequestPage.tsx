@@ -133,103 +133,160 @@ const RequestPage = () => {
           </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          {/* Main Content */}
-          <div className="lg:col-span-2">
-            {step === 'add-products' && (
-              <div className="space-y-6">
-                <Tabs defaultValue="common-items" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="common-items">Choose from Common Items</TabsTrigger>
-                    <TabsTrigger value="custom-item">Add Custom Item</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="common-items">
-                    <DefaultItemSelector onAddItem={handleAddProduct} />
-                  </TabsContent>
-                  <TabsContent value="custom-item">
-                    <ProductRequestForm onAdd={handleAddProduct} />
-                  </TabsContent>
-                </Tabs>
-              </div>
-            )}
+        {/* Main Content - Full Width */}
+        <div className="max-w-4xl mx-auto">
+          {step === 'add-products' && (
+            <div className="space-y-6">
+              <Tabs defaultValue="common-items" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="common-items">Choose from Common Items</TabsTrigger>
+                  <TabsTrigger value="custom-item">Add Custom Item</TabsTrigger>
+                </TabsList>
+                <TabsContent value="common-items">
+                  <DefaultItemSelector onAddItem={handleAddProduct} />
+                </TabsContent>
+                <TabsContent value="custom-item">
+                  <ProductRequestForm onAdd={handleAddProduct} />
+                </TabsContent>
+              </Tabs>
+            </div>
+          )}
 
-            {step === 'view-cart' && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-semibold">Your Cart ({totalItems} items)</h2>
+          {step === 'view-cart' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">Your Cart ({totalItems} items)</h2>
+                <div className="space-x-2">
                   <Button
                     variant="outline"
                     onClick={() => setStep('add-products')}
                   >
                     Add More Items
                   </Button>
+                  <Button 
+                    onClick={handleProceedToMerchants}
+                    disabled={cart.length === 0}
+                    className="bg-kitchen-500 hover:bg-kitchen-600"
+                  >
+                    {!user ? "Login to Choose Merchants" : "Choose Merchants"}
+                  </Button>
                 </div>
-                
-                {cart.length > 0 ? (
-                  <div className="space-y-4">
-                    {cart.map((product) => (
-                      <ProductCard 
-                        key={product.id} 
-                        product={product} 
-                        editable={false}
-                      />
-                    ))}
+              </div>
+              
+              {cart.length > 0 ? (
+                <div className="space-y-4">
+                  {cart.map((product) => (
+                    <ProductCard 
+                      key={product.id} 
+                      product={product} 
+                      editable={false}
+                    />
+                  ))}
+                  <div className="pt-4 border-t">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => dispatch(clearCart())}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      Clear All Items
+                    </Button>
                   </div>
-                ) : (
-                  <Card>
-                    <CardContent className="py-12 text-center">
-                      <ShoppingCart className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                      <p className="mb-4 text-gray-500">Your cart is empty</p>
-                      <Button
-                        onClick={() => setStep('add-products')}
-                        className="bg-kitchen-500 hover:bg-kitchen-600"
-                      >
-                        Add Items
-                      </Button>
+                </div>
+              ) : (
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <ShoppingCart className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+                    <p className="mb-4 text-gray-500">Your cart is empty</p>
+                    <Button
+                      onClick={() => setStep('add-products')}
+                      className="bg-kitchen-500 hover:bg-kitchen-600"
+                    >
+                      Add Items
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+
+          {step === 'select-merchants' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-semibold">Select Merchants</h2>
+                  <p className="text-gray-600">Choose multiple merchants to get competitive quotes for your items.</p>
+                </div>
+                <div className="space-x-2">
+                  <Button 
+                    variant="outline"
+                    onClick={() => setStep('view-cart')}
+                  >
+                    Back to Cart
+                  </Button>
+                  {selectedMerchants.length > 0 && (
+                    <Button 
+                      onClick={() => setStep('review')}
+                      className="bg-kitchen-500 hover:bg-kitchen-600"
+                    >
+                      Continue to Review
+                    </Button>
+                  )}
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                {merchants.map((merchant) => (
+                  <Card key={merchant.id} className="overflow-hidden">
+                    <CardContent className="p-4">
+                      <div className="flex items-center space-x-4">
+                        <Checkbox
+                          checked={selectedMerchants.includes(merchant.id)}
+                          onCheckedChange={(checked) => handleMerchantToggle(merchant.id, checked as boolean)}
+                        />
+                        <img 
+                          src={merchant.image} 
+                          alt={merchant.name}
+                          className="w-16 h-16 rounded-lg object-cover"
+                        />
+                        <div className="flex-1">
+                          <h3 className="font-semibold">{merchant.name}</h3>
+                          <p className="text-sm text-gray-600">
+                            ⭐ {merchant.rating} • {merchant.deliveryTime}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            {merchant.categories.join(', ')}
+                          </p>
+                        </div>
+                      </div>
                     </CardContent>
                   </Card>
-                )}
+                ))}
               </div>
-            )}
+            </div>
+          )}
 
-            {step === 'select-merchants' && (
-              <div className="space-y-6">
-                <h2 className="text-xl font-semibold">Select Merchants</h2>
-                <p className="text-gray-600">Choose multiple merchants to get competitive quotes for your items.</p>
-                
-                <div className="space-y-4">
-                  {merchants.map((merchant) => (
-                    <Card key={merchant.id} className="overflow-hidden">
-                      <CardContent className="p-4">
-                        <div className="flex items-center space-x-4">
-                          <Checkbox
-                            checked={selectedMerchants.includes(merchant.id)}
-                            onCheckedChange={(checked) => handleMerchantToggle(merchant.id, checked as boolean)}
-                          />
-                          <img 
-                            src={merchant.image} 
-                            alt={merchant.name}
-                            className="w-16 h-16 rounded-lg object-cover"
-                          />
-                          <div className="flex-1">
-                            <h3 className="font-semibold">{merchant.name}</h3>
-                            <p className="text-sm text-gray-600">
-                              ⭐ {merchant.rating} • {merchant.deliveryTime}
-                            </p>
-                            <p className="text-sm text-gray-500">
-                              {merchant.categories.join(', ')}
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+          {step === 'review' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">Review Your Request</h2>
+                <div className="space-x-2">
+                  <Button 
+                    variant="outline"
+                    onClick={() => setStep('select-merchants')}
+                  >
+                    Back to Merchant Selection
+                  </Button>
+                  <Button 
+                    onClick={handleSubmitRequest}
+                    className="bg-kitchen-500 hover:bg-kitchen-600"
+                    disabled={cart.length === 0 || selectedMerchants.length === 0}
+                  >
+                    Send Request to Merchants
+                  </Button>
                 </div>
               </div>
-            )}
 
-            {step === 'review' && (
-              <div className="space-y-6">
+              <div className="grid gap-6 md:grid-cols-2">
                 <Card>
                   <CardHeader>
                     <CardTitle>Selected Merchants ({selectedMerchants.length})</CardTitle>
@@ -253,13 +310,6 @@ const RequestPage = () => {
                         ) : null;
                       })}
                     </div>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setStep('select-merchants')}
-                      className="mt-4"
-                    >
-                      Change Selection
-                    </Button>
                   </CardContent>
                 </Card>
 
@@ -284,141 +334,8 @@ const RequestPage = () => {
                   </CardContent>
                 </Card>
               </div>
-            )}
-          </div>
-
-          {/* Cart Sidebar with Request Progress */}
-          <div>
-            <Card className="sticky top-24">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <ShoppingCart className="w-5 h-5" />
-                  Cart & Progress
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Request Progress Section */}
-                <div className="space-y-4 pb-4 border-b">
-                  <h4 className="font-medium text-gray-900">Request Progress</h4>
-                  
-                  <div className="flex items-center justify-between">
-                    <span>Items in cart:</span>
-                    <span className="font-medium">{totalItems}</span>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <span>Merchants selected:</span>
-                    <span className="font-medium">{selectedMerchants.length}</span>
-                  </div>
-                </div>
-
-                {/* Cart Preview */}
-                {cart.length > 0 && (
-                  <div className="space-y-3">
-                    <h4 className="font-medium text-gray-900">Cart Items</h4>
-                    <div className="space-y-2 max-h-40 overflow-y-auto">
-                      {cart.slice(0, 4).map((product) => (
-                        <div key={product.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                          <span className="font-medium text-sm">{product.name}</span>
-                          <span className="text-xs text-gray-600">{product.quantity} {product.unit}</span>
-                        </div>
-                      ))}
-                      {cart.length > 4 && (
-                        <p className="text-xs text-gray-500 text-center">
-                          +{cart.length - 4} more items
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Action Buttons */}
-                <div className="space-y-2">
-                  {step === 'add-products' && (
-                    <Button 
-                      onClick={handleViewCart}
-                      disabled={cart.length === 0}
-                      className="w-full bg-kitchen-500 hover:bg-kitchen-600"
-                    >
-                      View Cart ({totalItems})
-                    </Button>
-                  )}
-                  
-                  {step === 'view-cart' && (
-                    <>
-                      <Button 
-                        onClick={handleProceedToMerchants}
-                        disabled={cart.length === 0}
-                        className="w-full bg-kitchen-500 hover:bg-kitchen-600"
-                      >
-                        {!user ? "Login to Choose Merchants" : "Choose Merchants"}
-                      </Button>
-                      <Button 
-                        variant="outline"
-                        onClick={() => setStep('add-products')}
-                        className="w-full"
-                      >
-                        Add More Items
-                      </Button>
-                    </>
-                  )}
-                  
-                  {step === 'select-merchants' && (
-                    <>
-                      {selectedMerchants.length > 0 && (
-                        <Button 
-                          onClick={() => setStep('review')}
-                          className="w-full bg-kitchen-500 hover:bg-kitchen-600"
-                        >
-                          Continue to Review
-                        </Button>
-                      )}
-                      <Button 
-                        variant="outline"
-                        onClick={() => setStep('view-cart')}
-                        className="w-full"
-                      >
-                        Back to Cart
-                      </Button>
-                    </>
-                  )}
-                  
-                  {step === 'review' && (
-                    <>
-                      <Button 
-                        onClick={handleSubmitRequest}
-                        className="w-full bg-kitchen-500 hover:bg-kitchen-600"
-                        disabled={cart.length === 0 || selectedMerchants.length === 0}
-                      >
-                        Send Request to Merchants
-                      </Button>
-                      <Button 
-                        variant="outline"
-                        onClick={() => setStep('select-merchants')}
-                        className="w-full"
-                      >
-                        Back to Merchant Selection
-                      </Button>
-                    </>
-                  )}
-                </div>
-
-                {cart.length > 0 && (
-                  <div className="pt-4 border-t">
-                    <p className="text-sm text-gray-600 mb-2">Quick actions:</p>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => dispatch(clearCart())}
-                      className="w-full text-red-600 hover:text-red-700"
-                    >
-                      Clear All Items
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+            </div>
+          )}
         </div>
       </main>
     </div>
