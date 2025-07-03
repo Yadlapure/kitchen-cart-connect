@@ -12,9 +12,10 @@ interface ProductCardProps {
   product: Product;
   editable?: boolean;
   isOrderView?: boolean;
+  showPrice?: boolean;
 }
 
-const ProductCard = ({ product, editable = true, isOrderView = false }: ProductCardProps) => {
+const ProductCard = ({ product, editable = true, isOrderView = false, showPrice = true }: ProductCardProps) => {
   const dispatch = useAppDispatch();
   const [quantity, setQuantity] = useState(product.quantity || 1);
   const [unit, setUnit] = useState(product.unit);
@@ -107,28 +108,30 @@ const ProductCard = ({ product, editable = true, isOrderView = false }: ProductC
             <p className="mb-3 text-sm text-gray-500">{product.description}</p>
           )}
           
-          <div className="flex items-center justify-between mb-3">
-            {isOrderView && product.updatedPrice ? (
-              <div className="flex flex-col">
-                <span className="text-lg font-semibold text-kitchen-600">
-                  ₹{product.updatedPrice.toFixed(2)}
+          {showPrice && (
+            <div className="flex items-center justify-between mb-3">
+              {isOrderView && product.updatedPrice ? (
+                <div className="flex flex-col">
+                  <span className="text-lg font-semibold text-kitchen-600">
+                    ₹{product.updatedPrice.toFixed(2)}
+                  </span>
+                  <span className="text-sm text-gray-400 line-through">
+                    {product.price ? `₹${product.price.toFixed(2)}` : ''}
+                  </span>
+                </div>
+              ) : product.price ? (
+                <span className="text-lg font-semibold">₹{product.price.toFixed(2)}</span>
+              ) : (
+                <span className="text-sm italic text-gray-500">Price to be quoted</span>
+              )}
+              
+              {isOrderView && product.isAvailable === false && (
+                <span className="px-2 py-1 text-xs text-white bg-red-500 rounded-md">
+                  Unavailable
                 </span>
-                <span className="text-sm text-gray-400 line-through">
-                  {product.price ? `₹${product.price.toFixed(2)}` : ''}
-                </span>
-              </div>
-            ) : product.price ? (
-              <span className="text-lg font-semibold">₹{product.price.toFixed(2)}</span>
-            ) : (
-              <span className="text-sm italic text-gray-500">Price to be quoted</span>
-            )}
-            
-            {isOrderView && product.isAvailable === false && (
-              <span className="px-2 py-1 text-xs text-white bg-red-500 rounded-md">
-                Unavailable
-              </span>
-            )}
-          </div>
+              )}
+            </div>
+          )}
           
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">

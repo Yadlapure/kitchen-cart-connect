@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAppSelector } from '@/hooks/redux';
 import Header from "@/components/Header";
@@ -86,28 +87,28 @@ const RequestPage = () => {
               <TabsContent value="fruits-and-vegetables" className="pt-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {filteredProducts.map(product => (
-                    <ProductCard key={product.id} product={product} />
+                    <ProductCard key={product.id} product={product} showPrice={false} />
                   ))}
                 </div>
               </TabsContent>
               <TabsContent value="dairy-and-bakery" className="pt-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {filteredProducts.map(product => (
-                    <ProductCard key={product.id} product={product} />
+                    <ProductCard key={product.id} product={product} showPrice={false} />
                   ))}
                 </div>
               </TabsContent>
               <TabsContent value="staples" className="pt-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {filteredProducts.map(product => (
-                    <ProductCard key={product.id} product={product} />
+                    <ProductCard key={product.id} product={product} showPrice={false} />
                   ))}
                 </div>
               </TabsContent>
               <TabsContent value="snacks-and-beverages" className="pt-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {filteredProducts.map(product => (
-                    <ProductCard key={product.id} product={product} />
+                    <ProductCard key={product.id} product={product} showPrice={false} />
                   ))}
                 </div>
               </TabsContent>
