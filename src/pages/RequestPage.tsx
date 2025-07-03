@@ -1,8 +1,10 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Header from "@/components/Header";
 import DefaultItemSelector from "@/components/DefaultItemSelector";
 import ProductRequestForm from "@/components/ProductRequestForm";
@@ -136,40 +138,18 @@ const RequestPage = () => {
           <div className="lg:col-span-2">
             {step === 'add-products' && (
               <div className="space-y-6">
-                <DefaultItemSelector onAddItem={handleAddProduct} />
-                <ProductRequestForm onAdd={handleAddProduct} />
-                
-                {cart.length > 0 && (
-                  <Card className="border-kitchen-200">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <ShoppingCart className="w-5 h-5" />
-                        Items in Cart ({totalItems})
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        {cart.slice(0, 3).map((product) => (
-                          <div key={product.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                            <span className="font-medium">{product.name}</span>
-                            <span className="text-sm text-gray-600">{product.quantity} {product.unit}</span>
-                          </div>
-                        ))}
-                        {cart.length > 3 && (
-                          <p className="text-sm text-gray-500 text-center">
-                            +{cart.length - 3} more items
-                          </p>
-                        )}
-                      </div>
-                      <Button
-                        onClick={handleViewCart}
-                        className="w-full mt-4 bg-kitchen-500 hover:bg-kitchen-600"
-                      >
-                        View Full Cart & Continue
-                      </Button>
-                    </CardContent>
-                  </Card>
-                )}
+                <Tabs defaultValue="common-items" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="common-items">Choose from Common Items</TabsTrigger>
+                    <TabsTrigger value="custom-item">Add Custom Item</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="common-items">
+                    <DefaultItemSelector onAddItem={handleAddProduct} />
+                  </TabsContent>
+                  <TabsContent value="custom-item">
+                    <ProductRequestForm onAdd={handleAddProduct} />
+                  </TabsContent>
+                </Tabs>
               </div>
             )}
 
@@ -194,22 +174,6 @@ const RequestPage = () => {
                         editable={false}
                       />
                     ))}
-                    
-                    <div className="flex gap-4 pt-4 border-t">
-                      <Button
-                        onClick={handleProceedToMerchants}
-                        className="flex-1 bg-kitchen-500 hover:bg-kitchen-600"
-                      >
-                        {!user ? "Login to Choose Merchants" : "Choose Merchants"}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => dispatch(clearCart())}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        Clear Cart
-                      </Button>
-                    </div>
                   </div>
                 ) : (
                   <Card>
@@ -323,23 +287,52 @@ const RequestPage = () => {
             )}
           </div>
 
-          {/* Sidebar */}
+          {/* Cart Sidebar with Request Progress */}
           <div>
             <Card className="sticky top-24">
               <CardHeader>
-                <CardTitle>Request Progress</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <ShoppingCart className="w-5 h-5" />
+                  Cart & Progress
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span>Items in cart:</span>
-                  <span className="font-medium">{totalItems}</span>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <span>Merchants selected:</span>
-                  <span className="font-medium">{selectedMerchants.length}</span>
+                {/* Request Progress Section */}
+                <div className="space-y-4 pb-4 border-b">
+                  <h4 className="font-medium text-gray-900">Request Progress</h4>
+                  
+                  <div className="flex items-center justify-between">
+                    <span>Items in cart:</span>
+                    <span className="font-medium">{totalItems}</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span>Merchants selected:</span>
+                    <span className="font-medium">{selectedMerchants.length}</span>
+                  </div>
                 </div>
 
+                {/* Cart Preview */}
+                {cart.length > 0 && (
+                  <div className="space-y-3">
+                    <h4 className="font-medium text-gray-900">Cart Items</h4>
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      {cart.slice(0, 4).map((product) => (
+                        <div key={product.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                          <span className="font-medium text-sm">{product.name}</span>
+                          <span className="text-xs text-gray-600">{product.quantity} {product.unit}</span>
+                        </div>
+                      ))}
+                      {cart.length > 4 && (
+                        <p className="text-xs text-gray-500 text-center">
+                          +{cart.length - 4} more items
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
                 <div className="space-y-2">
                   {step === 'add-products' && (
                     <Button 
