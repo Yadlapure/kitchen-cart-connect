@@ -1,16 +1,24 @@
 
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { Product } from './appSlice';
+
+export interface ApiProduct {
+  id: string;
+  name: string;
+  description: string;
+  quantity: number;
+  unit: 'gram' | 'kg' | 'number' | 'liter' | 'piece';
+  category: string;
+}
 
 // Mock API for demonstration
 export const appApi = createApi({
   reducerPath: 'appApi',
   baseQuery: fetchBaseQuery({ baseUrl: '/api' }),
   endpoints: (builder) => ({
-    getProducts: builder.query<Product[], string | undefined>({
-      queryFn: async (userId) => {
+    getProducts: builder.query<ApiProduct[], string | undefined>({
+      queryFn: async () => {
         // Mock data - in real app this would fetch from backend
-        const mockProducts: Product[] = [
+        const mockProducts: ApiProduct[] = [
           {
             id: '1',
             name: 'Fresh Bananas',

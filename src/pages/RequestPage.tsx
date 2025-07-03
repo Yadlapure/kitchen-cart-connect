@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAppSelector } from '@/hooks/redux';
 import Header from "@/components/Header";
@@ -5,24 +6,34 @@ import ProductCard from "@/components/ProductCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Product } from '@/store/appSlice';
-import { useGetProductsQuery } from '@/store/appApi';
+import { useGetProductsQuery, ApiProduct } from '@/store/appApi';
 import Cart from '@/components/Cart';
 import RequestProgress from '@/components/RequestProgress';
 import LocationSetupHandler from '@/components/LocationSetupHandler';
 
 const RequestPage = () => {
-  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
-  const { data: products, isLoading, isError } = useGetProductsQuery(user?.id);
+  const { user } = useAppSelector((state) => state.auth);
+  const { data: apiProducts, isLoading, isError } = useGetProductsQuery(user?.id);
   const [activeTab, setActiveTab] = useState<string>('fruits-and-vegetables');
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const { cart } = useAppSelector((state) => state.app);
   const [currentStep, setCurrentStep] = useState(1);
 
   useEffect(() => {
-    if (products) {
+    if (apiProducts) {
+      // Convert API products to app products
+      const products: Product[] = apiProducts.map((apiProduct: ApiProduct) => ({
+        id: apiProduct.id,
+        name: apiProduct.name,
+        description: apiProduct.description,
+        quantity: apiProduct.quantity,
+        unit: apiProduct.unit,
+        category: apiProduct.category
+      }));
+      
       setFilteredProducts(products.filter(product => product.category === activeTab));
     }
-  }, [products, activeTab]);
+  }, [apiProducts, activeTab]);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
