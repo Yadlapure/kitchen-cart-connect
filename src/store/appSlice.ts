@@ -1,3 +1,4 @@
+
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 // Types
@@ -40,8 +41,8 @@ export interface MerchantQuote {
   estimatedDeliveryTime?: string;
   quoteNotes?: string;
   paymentMethod?: 'COD' | 'Online' | 'UPI';
-  submittedAt: string; // Changed from Date to string
-  isQuoteSubmitted?: boolean; // Add this property
+  submittedAt: string;
+  isQuoteSubmitted?: boolean;
 }
 
 export interface Order {
@@ -54,8 +55,8 @@ export interface Order {
   merchantQuotes: MerchantQuote[];
   selectedQuote?: string;
   status: 'requested' | 'quoted' | 'confirmed' | 'processing' | 'delivering' | 'completed' | 'cancelled';
-  createdAt: string; // Changed from Date to string
-  updatedAt: string; // Changed from Date to string
+  createdAt: string;
+  updatedAt: string;
   estimatedDeliveryTime?: string;
   paymentMethod?: 'COD' | 'Online' | 'UPI';
   total?: number;
@@ -181,7 +182,7 @@ const initialState: AppState = {
   deliveryBoys: sampleDeliveryBoys,
   defaultItems: defaultKitchenItems,
   selectedMerchants: [],
-  commissionRate: 0.05, // 5% commission
+  commissionRate: 0.05,
 };
 
 const appSlice = createSlice({
@@ -238,7 +239,6 @@ const appSlice = createSlice({
       if (order) {
         Object.assign(order, updates, { updatedAt: new Date().toISOString() });
         
-        // Auto-calculate commission when total is updated
         if (updates.total && updates.status === 'completed') {
           order.commission = updates.total * state.commissionRate;
         }
@@ -248,7 +248,6 @@ const appSlice = createSlice({
       const { orderId, merchantQuote } = action.payload;
       const order = state.orders.find(o => o.id === orderId);
       if (order) {
-        // Mark the quote as properly submitted with timestamp
         const finalQuote = {
           ...merchantQuote,
           submittedAt: new Date().toISOString(),
@@ -262,13 +261,8 @@ const appSlice = createSlice({
           order.merchantQuotes.push(finalQuote);
         }
         
-        // ONLY NOW update status to 'quoted' when quote is actually submitted
         order.status = 'quoted';
         order.updatedAt = new Date().toISOString();
-        
-        console.log(`🎯 QUOTE ACTUALLY SUBMITTED: Merchant ${merchantQuote.merchantId} completed quote for order ${orderId}`);
-        console.log(`📊 Order status updated to: ${order.status}`);
-        console.log(`🔄 Order updatedAt: ${order.updatedAt}`);
       }
     },
     selectMerchantQuote: (state, action: PayloadAction<{ orderId: string; merchantId: string }>) => {
@@ -285,8 +279,6 @@ const appSlice = createSlice({
           order.paymentMethod = selectedQuote.paymentMethod;
           order.status = 'confirmed';
           order.updatedAt = new Date().toISOString();
-          
-          console.log(`Customer selected quote from merchant ${merchantId} for order ${orderId}`);
         }
       }
     },
@@ -294,10 +286,8 @@ const appSlice = createSlice({
       const { orderId, merchantId, productId, price, isAvailable, notes } = action.payload;
       const order = state.orders.find(o => o.id === orderId);
       if (order) {
-        // Find existing merchant verification data (NOT a quote yet)
         let merchantVerificationData = order.merchantQuotes?.find(q => q.merchantId === merchantId);
         if (!merchantVerificationData) {
-          // Create new verification data structure (NOT submitted quote)
           merchantVerificationData = {
             merchantId,
             products: order.products.map(p => ({ 
@@ -308,14 +298,12 @@ const appSlice = createSlice({
               merchantNotes: undefined
             })),
             total: 0,
-            submittedAt: '', // Empty means not submitted yet
-            isQuoteSubmitted: false // Add flag to track if quote is actually submitted
+            submittedAt: '',
+            isQuoteSubmitted: false
           };
           order.merchantQuotes.push(merchantVerificationData);
-          console.log(`🆕 Created new verification data for ${merchantId} with ${merchantVerificationData.products.length} unverified products`);
         }
         
-        // Update ONLY the specific product that's being verified
         const productIndex = merchantVerificationData.products.findIndex(p => p.id === productId);
         if (productIndex !== -1) {
           merchantVerificationData.products[productIndex] = {
@@ -325,13 +313,7 @@ const appSlice = createSlice({
             isVerified: true,
             merchantNotes: notes
           };
-          
-          console.log(`✅ INDIVIDUAL VERIFICATION: Product ${productId} verified for merchant ${merchantId}`);
-          console.log(`📋 Verification progress: ${merchantVerificationData.products.filter(p => p.isVerified).length}/${merchantVerificationData.products.length}`);
         }
-        
-        // DO NOT change order status or mark as submitted - this is just verification
-        // Order status should only change when merchant actually submits the complete quote
       }
     },
     assignDeliveryBoy: (state, action: PayloadAction<{ orderId: string; deliveryBoyId: string }>) => {
@@ -340,12 +322,10 @@ const appSlice = createSlice({
       const deliveryBoy = state.deliveryBoys.find(db => db.id === deliveryBoyId);
       
       if (order && deliveryBoy) {
-        // Update order with delivery assignment
         order.deliveryBoyId = deliveryBoyId;
-        order.status = 'delivering'; // Make sure status is set to 'delivering'
+        order.status = 'delivering';
         order.updatedAt = new Date().toISOString();
         
-        // Ensure delivery address and phone are set
         if (!order.deliveryAddress) {
           order.deliveryAddress = "123 Main Street, Customer Area, City - 560001";
         }
@@ -353,17 +333,10 @@ const appSlice = createSlice({
           order.customerPhone = "+91 98765 43210";
         }
         
-        // Update delivery boy availability
         if (!deliveryBoy.currentOrders.includes(orderId)) {
           deliveryBoy.currentOrders.push(orderId);
         }
-        deliveryBoy.isAvailable = deliveryBoy.currentOrders.length < 3; // Can handle up to 3 orders
-        
-        console.log(`🚚 DELIVERY ASSIGNMENT: Order ${orderId} assigned to delivery boy ${deliveryBoyId}`);
-        console.log(`📦 Delivery boy ${deliveryBoy.name} now has ${deliveryBoy.currentOrders.length} active orders`);
-        console.log(`🔄 Order status updated to: ${order.status}`);
-        console.log(`📍 Delivery address: ${order.deliveryAddress}`);
-        console.log(`📞 Customer phone: ${order.customerPhone}`);
+        deliveryBoy.isAvailable = deliveryBoy.currentOrders.length < 3;
       }
     },
     updateDeliveryStatus: (state, action: PayloadAction<{ orderId: string; status: 'completed' }>) => {
@@ -374,20 +347,15 @@ const appSlice = createSlice({
         order.status = 'completed';
         order.updatedAt = new Date().toISOString();
         
-        // Calculate commission automatically
         if (order.total) {
           order.commission = order.total * state.commissionRate;
         }
         
-        // Remove from delivery boy's current orders and make available
         if (order.deliveryBoyId) {
           const deliveryBoy = state.deliveryBoys.find(db => db.id === order.deliveryBoyId);
           if (deliveryBoy) {
             deliveryBoy.currentOrders = deliveryBoy.currentOrders.filter(id => id !== orderId);
-            deliveryBoy.isAvailable = true; // Make available again
-            
-            console.log(`✅ DELIVERY COMPLETED: Order ${orderId} marked as completed`);
-            console.log(`🚚 Delivery boy ${deliveryBoy.name} is now available again`);
+            deliveryBoy.isAvailable = true;
           }
         }
       }
