@@ -1,13 +1,18 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
-// Types
+// Basic types first
+export type UnitType = 'gram' | 'kg' | 'number' | 'liter' | 'piece';
+export type OrderStatus = 'requested' | 'quoted' | 'confirmed' | 'processing' | 'delivering' | 'completed' | 'cancelled';
+export type PaymentMethod = 'COD' | 'Online' | 'UPI';
+
+// Simple Product interface
 export interface Product {
   id: string;
   name: string;
   description?: string;
   price?: number;
   quantity: number;
-  unit: 'gram' | 'kg' | 'number' | 'liter' | 'piece';
+  unit: UnitType;
   category?: string;
   isAvailable?: boolean;
   updatedPrice?: number;
@@ -15,11 +20,12 @@ export interface Product {
   merchantNotes?: string;
 }
 
+// Other interfaces
 export interface DefaultItem {
   id: string;
   name: string;
   category: string;
-  commonUnits: ('gram' | 'kg' | 'number' | 'liter' | 'piece')[];
+  commonUnits: UnitType[];
   suggestedQuantity?: number;
   image?: string;
 }
@@ -39,9 +45,9 @@ export interface MerchantQuote {
   total: number;
   estimatedDeliveryTime?: string;
   quoteNotes?: string;
-  paymentMethod?: 'COD' | 'Online' | 'UPI';
-  submittedAt: string; // Changed from Date to string
-  isQuoteSubmitted?: boolean; // Add this property
+  paymentMethod?: PaymentMethod;
+  submittedAt: string;
+  isQuoteSubmitted?: boolean;
 }
 
 export interface Order {
@@ -53,11 +59,11 @@ export interface Order {
   products: Product[];
   merchantQuotes: MerchantQuote[];
   selectedQuote?: string;
-  status: 'requested' | 'quoted' | 'confirmed' | 'processing' | 'delivering' | 'completed' | 'cancelled';
-  createdAt: string; // Changed from Date to string
-  updatedAt: string; // Changed from Date to string
+  status: OrderStatus;
+  createdAt: string;
+  updatedAt: string;
   estimatedDeliveryTime?: string;
-  paymentMethod?: 'COD' | 'Online' | 'UPI';
+  paymentMethod?: PaymentMethod;
   total?: number;
   commission?: number;
   quoteNotes?: string;
@@ -73,6 +79,7 @@ export interface DeliveryBoy {
   currentOrders: string[];
 }
 
+// State interface
 interface AppState {
   cart: Product[];
   merchants: Merchant[];
