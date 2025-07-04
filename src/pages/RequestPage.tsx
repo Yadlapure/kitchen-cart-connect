@@ -180,6 +180,7 @@ const RequestPage = () => {
                       key={product.id} 
                       product={product} 
                       editable={false}
+                      showEditOptions={true}
                     />
                   ))}
                   <div className="pt-4 border-t">
