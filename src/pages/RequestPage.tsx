@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -52,16 +51,6 @@ const RequestPage = () => {
       <main className="container px-4 py-8 mx-auto sm:px-6">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold">Build Your Request</h1>
-          
-          {/* Cart Button */}
-          <Button
-            onClick={handleViewCart}
-            variant="outline"
-            className="relative"
-          >
-            <ShoppingCart className="w-4 h-4 mr-2" />
-            Cart ({totalItems})
-          </Button>
         </div>
 
         {/* Main Content */}
@@ -70,8 +59,8 @@ const RequestPage = () => {
             <div className="space-y-6">
               <Tabs defaultValue="common-items" className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="common-items">Choose from Common Items</TabsTrigger>
-                  <TabsTrigger value="custom-item">Add Custom Item</TabsTrigger>
+                  <TabsTrigger value="common-items">Common Items</TabsTrigger>
+                  <TabsTrigger value="custom-item">Custom Items</TabsTrigger>
                 </TabsList>
                 <TabsContent value="common-items">
                   <DefaultItemSelector />

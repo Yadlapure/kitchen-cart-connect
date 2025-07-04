@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,6 +12,7 @@ import LoginScreen from "@/components/LoginScreen";
 // Pages
 import Index from "./pages/Index";
 import RequestPage from "./pages/RequestPage";
+import MerchantsPage from "./pages/MerchantsPage";
 import OrdersPage from "./pages/OrdersPage";
 import OrderDetailPage from "./pages/OrderDetailPage";
 import MerchantRequestsPage from "./pages/MerchantRequestsPage";
@@ -44,6 +46,7 @@ const AppContent = () => {
         {/* Public Routes */}
         <Route path="/" element={<Index />} />
         <Route path="/request" element={<RequestPage />} />
+        <Route path="/merchants" element={<MerchantsPage />} />
         <Route path="/login" element={<LoginScreen />} />
         
         {/* Protected Customer Routes */}
