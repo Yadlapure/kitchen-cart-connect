@@ -29,6 +29,10 @@ const Header = () => {
     navigate('/login');
   };
 
+  const handleCartClick = () => {
+    navigate('/request');
+  };
+
   const handleLocationSelect = (location: string) => {
     setIsLocationSelectorOpen(false);
   };
@@ -151,23 +155,22 @@ const Header = () => {
         </nav>
         
         <div className="flex items-center space-x-4">
+          {/* Cart Icon - Always visible */}
+          <Button 
+            variant="ghost" 
+            onClick={handleCartClick}
+            className="relative"
+          >
+            <FaShoppingCart className="w-5 h-5" />
+            {cart.length > 0 && (
+              <span className="absolute top-0 right-0 flex items-center justify-center w-4 h-4 text-xs text-white bg-kitchen-500 rounded-full -mt-1 -mr-1">
+                {cart.length}
+              </span>
+            )}
+          </Button>
+
           {isAuthenticated ? (
             <div className="flex items-center space-x-2">
-              {user?.role === 'customer' && (
-                <Button 
-                  variant="ghost" 
-                  onClick={() => navigate('/request')}
-                  className="relative"
-                >
-                  <FaShoppingCart className="w-5 h-5" />
-                  {cart.length > 0 && (
-                    <span className="absolute top-0 right-0 flex items-center justify-center w-4 h-4 text-xs text-white bg-kitchen-500 rounded-full -mt-1 -mr-1">
-                      {cart.length}
-                    </span>
-                  )}
-                </Button>
-              )}
-              
               <span className="text-sm text-gray-600 hidden sm:block">Welcome, {user?.name}</span>
               
               {/* User Menu Dropdown */}

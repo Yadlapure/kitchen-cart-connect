@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
 import { useAppSelector, useAppDispatch } from "@/hooks/redux";
-import { addSelectedMerchant, removeSelectedMerchant, clearSelectedMerchants, addOrder } from "@/store/appSlice";
+import { addSelectedMerchant, removeSelectedMerchant, clearSelectedMerchants, addOrder, clearCart } from "@/store/appSlice";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Store, MapPin, Star } from "lucide-react";
@@ -57,7 +57,29 @@ const MerchantsPage = () => {
       return;
     }
     
-    // Create order logic here
+    if (!user) {
+      toast.error("Please login to place an order");
+      return;
+    }
+    
+    // Create order with proper structure
+    const newOrder = {
+      id: `order_${Date.now()}`,
+      customerId: user.id,
+      selectedMerchants: selectedMerchants,
+      products: cart,
+      merchantQuotes: [],
+      status: 'requested' as const,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deliveryAddress: user.addresses?.[0]?.fullAddress || "Default address",
+      customerPhone: user.phone || "+91 98765 43210"
+    };
+    
+    dispatch(addOrder(newOrder));
+    dispatch(clearCart());
+    dispatch(clearSelectedMerchants());
+    
     toast.success("Order placed successfully!");
     navigate('/orders');
   };
