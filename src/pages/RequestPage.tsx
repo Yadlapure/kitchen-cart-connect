@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,7 +14,8 @@ import { toast } from "sonner";
 import { ShoppingCart } from "lucide-react";
 
 const RequestPage = () => {
-  const { cart, user } = useAppSelector((state) => state.app);
+  const { cart } = useAppSelector((state) => state.app);
+  const { user } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const [showCart, setShowCart] = useState(false);
@@ -79,26 +79,6 @@ const RequestPage = () => {
                   <ProductRequestForm onAdd={handleAddProduct} />
                 </TabsContent>
               </Tabs>
-
-              {/* Bottom Action Buttons */}
-              {cart.length > 0 && (
-                <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-white shadow-lg rounded-lg p-4 border">
-                  <div className="flex space-x-4">
-                    <Button
-                      variant="outline"
-                      onClick={handleViewCart}
-                    >
-                      Add More Items
-                    </Button>
-                    <Button 
-                      onClick={handleProceedToMerchants}
-                      className="bg-kitchen-500 hover:bg-kitchen-600"
-                    >
-                      {!user ? "Login to Choose Merchants" : "Choose Merchants"}
-                    </Button>
-                  </div>
-                </div>
-              )}
             </div>
           ) : (
             <div className="space-y-6">
@@ -149,6 +129,26 @@ const RequestPage = () => {
             </div>
           )}
         </div>
+
+        {/* Bottom Action Buttons - Fixed Position */}
+        {cart.length > 0 && (
+          <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-white shadow-lg rounded-lg p-4 border z-50">
+            <div className="flex space-x-4">
+              <Button
+                variant="outline"
+                onClick={() => setShowCart(false)}
+              >
+                Add More Items
+              </Button>
+              <Button 
+                onClick={handleProceedToMerchants}
+                className="bg-kitchen-500 hover:bg-kitchen-600"
+              >
+                {!user ? "Login to Choose Merchants" : "Choose Merchants"}
+              </Button>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
