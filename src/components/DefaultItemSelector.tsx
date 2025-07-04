@@ -68,15 +68,6 @@ const DefaultItemSelector = () => {
       ...prev,
       [itemId]: unit
     }));
-    
-    // Update existing cart item unit if it exists
-    const existingCartItem = cart.find(cartItem => cartItem.id.startsWith(itemId));
-    if (existingCartItem) {
-      dispatch(updateQuantity({ 
-        productId: existingCartItem.id, 
-        quantity: existingCartItem.quantity 
-      }));
-    }
   };
 
   return (
@@ -101,14 +92,14 @@ const DefaultItemSelector = () => {
           </Select>
         </div>
 
-        {/* Items Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-96 overflow-y-auto">
+        {/* Items Grid - Swiggy/Zomato Style */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
           {filteredItems.map((item) => {
             const quantity = getItemQuantity(item.id);
             const unit = getItemUnit(item.id, item.commonUnits[0]);
             
             return (
-              <div key={item.id} className="border rounded-lg p-4 flex items-center space-x-3">
+              <div key={item.id} className="border rounded-lg p-3 flex flex-col items-center space-y-2 hover:shadow-md transition-shadow">
                 {/* Item Image */}
                 <img 
                   src={item.image || '/placeholder.svg'} 
@@ -116,56 +107,51 @@ const DefaultItemSelector = () => {
                   className="w-16 h-16 rounded-lg object-cover"
                 />
                 
-                <div className="flex-1">
-                  <h4 className="font-medium">{item.name}</h4>
-                  
-                  {/* Unit Selection */}
-                  {item.commonUnits.length > 1 && (
-                    <div className="mt-1">
-                      <Select 
-                        value={unit} 
-                        onValueChange={(value) => handleUnitChange(item.id, value)}
-                      >
-                        <SelectTrigger className="h-6 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {item.commonUnits.map(u => (
-                            <SelectItem key={u} value={u}>{u}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                  
-                  {item.commonUnits.length === 1 && (
-                    <div className="flex gap-1 mt-1">
-                      <Badge variant="secondary" className="text-xs">{item.commonUnits[0]}</Badge>
-                    </div>
-                  )}
-                </div>
+                {/* Item Name */}
+                <h4 className="font-medium text-sm text-center leading-tight">{item.name}</h4>
+                
+                {/* Unit Selection */}
+                {item.commonUnits.length > 1 && (
+                  <Select 
+                    value={unit} 
+                    onValueChange={(value) => handleUnitChange(item.id, value)}
+                  >
+                    <SelectTrigger className="h-6 text-xs w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {item.commonUnits.map(u => (
+                        <SelectItem key={u} value={u}>{u}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                
+                {item.commonUnits.length === 1 && (
+                  <Badge variant="secondary" className="text-xs">{item.commonUnits[0]}</Badge>
+                )}
                 
                 {/* Quantity Controls */}
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center justify-center w-full">
                   {quantity === 0 ? (
                     <button
                       onClick={() => incrementQuantity(item)}
-                      className="h-8 w-8 p-0 border border-gray-300 rounded flex items-center justify-center hover:bg-gray-50"
+                      className="h-8 w-full border border-green-500 text-green-500 rounded flex items-center justify-center hover:bg-green-50 font-medium text-sm"
                     >
-                      <Plus className="h-4 w-4" />
+                      ADD
                     </button>
                   ) : (
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center justify-between w-full border border-green-500 rounded">
                       <button
                         onClick={() => decrementQuantity(item)}
-                        className="h-8 w-8 p-0 border border-gray-300 rounded flex items-center justify-center hover:bg-gray-50"
+                        className="h-8 w-8 flex items-center justify-center hover:bg-green-50 text-green-500"
                       >
                         <Minus className="h-4 w-4" />
                       </button>
-                      <span className="font-medium min-w-[20px] text-center">{quantity}</span>
+                      <span className="font-medium text-green-500 text-sm">{quantity}</span>
                       <button
                         onClick={() => incrementQuantity(item)}
-                        className="h-8 w-8 p-0 border border-gray-300 rounded flex items-center justify-center hover:bg-gray-50"
+                        className="h-8 w-8 flex items-center justify-center hover:bg-green-50 text-green-500"
                       >
                         <Plus className="h-4 w-4" />
                       </button>
