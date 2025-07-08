@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useAppSelector, useAppDispatch } from "@/hooks/redux";
-import { submitMerchantQuote, verifyProduct } from "@/store/appSlice";
+import { submitMerchantQuote, verifyProduct, autoPopulateMerchantQuote } from "@/store/appSlice";
 import { MerchantQuote, Product } from "@/store/appSlice";
 import { toast } from "sonner";
 
@@ -34,6 +34,14 @@ const MerchantQuoteCard = ({ orderId, merchantId, products, existingQuote }: Mer
   
   // Check if quote is actually submitted (not just verification data)
   const isQuoteActuallySubmitted = currentMerchantData?.isQuoteSubmitted === true && currentMerchantData?.submittedAt;
+
+  // Auto-populate matching items on component mount
+  useEffect(() => {
+    if (!currentMerchantData && merchant) {
+      console.log(`🤖 Auto-populating quote for merchant ${merchantId}`);
+      dispatch(autoPopulateMerchantQuote({ orderId, merchantId }));
+    }
+  }, [orderId, merchantId, currentMerchantData, merchant, dispatch]);
   
   // Get products with their individual verification status
   const getProductsWithVerificationStatus = () => {
@@ -104,12 +112,14 @@ const MerchantQuoteCard = ({ orderId, merchantId, products, existingQuote }: Mer
   const allProductsVerified = verifiedProducts.every(p => p.isVerified);
   const verifiedCount = verifiedProducts.filter(p => p.isVerified).length;
   const totalCount = verifiedProducts.length;
+  const autoVerifiedCount = verifiedProducts.filter(p => p.isVerified && p.merchantNotes === 'Auto-populated from inventory').length;
 
   console.log('🔍 MerchantQuoteCard State Check:', {
     orderId,
     merchantId,
     verifiedCount,
     totalCount,
+    autoVerifiedCount,
     allProductsVerified,
     isQuoteActuallySubmitted,
     hasVerificationData: !!currentMerchantData,
@@ -123,9 +133,16 @@ const MerchantQuoteCard = ({ orderId, merchantId, products, existingQuote }: Mer
           <span>Quote from {merchant?.name}</span>
           <div className="flex items-center gap-2">
             {!isQuoteActuallySubmitted && (
-              <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                {verifiedCount}/{totalCount} Verified
-              </Badge>
+              <>
+                <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                  {verifiedCount}/{totalCount} Verified
+                </Badge>
+                {autoVerifiedCount > 0 && (
+                  <Badge variant="outline" className="bg-green-50 text-green-700">
+                    {autoVerifiedCount} Auto-matched
+                  </Badge>
+                )}
+              </>
             )}
             {isQuoteActuallySubmitted && <Badge className="bg-green-500">Quote Submitted</Badge>}
           </div>
@@ -136,9 +153,16 @@ const MerchantQuoteCard = ({ orderId, merchantId, products, existingQuote }: Mer
         <div>
           <h4 className="font-medium mb-3">Verify Items & Set Prices</h4>
           {!isQuoteActuallySubmitted && (
-            <p className="text-sm text-gray-600 mb-4">
-              Verify each item individually. Quote will only be sent to customer after all items are verified.
-            </p>
+            <div className="mb-4">
+              <p className="text-sm text-gray-600">
+                Items already in your inventory are auto-verified with stored prices. Review and verify remaining items.
+              </p>
+              {autoVerifiedCount > 0 && (
+                <p className="text-sm text-green-600 mt-1">
+                  ✅ {autoVerifiedCount} items auto-matched from your inventory
+                </p>
+              )}
+            </div>
           )}
           <div className="space-y-4">
             {verifiedProducts.map((product) => (

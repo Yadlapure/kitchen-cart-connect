@@ -23,6 +23,15 @@ export interface DefaultItem {
   image?: string;
 }
 
+export interface MerchantInventoryItem {
+  id: string;
+  name: string;
+  price: number;
+  unit: 'gram' | 'kg' | 'number' | 'liter' | 'piece';
+  isAvailable: boolean;
+  category?: string;
+}
+
 export interface Merchant {
   id: string;
   name: string;
@@ -30,6 +39,7 @@ export interface Merchant {
   rating: number;
   categories: string[];
   deliveryTime: string;
+  inventory: MerchantInventoryItem[];
 }
 
 export interface MerchantQuote {
@@ -128,32 +138,48 @@ const defaultKitchenItems: DefaultItem[] = [
   }
 ];
 
-// Sample data
+// Sample data with merchant inventories
 const sampleMerchants: Merchant[] = [
   {
     id: '1',
-    name: 'Kitchen Essentials',
+    name: 'Fresh Mart',
     image: '/placeholder.svg',
     rating: 4.8,
-    categories: ['Utensils', 'Cookware', 'Appliances'],
-    deliveryTime: '30-45 min'
+    categories: ['Grocery', 'Fresh Produce'],
+    deliveryTime: '30-45 min',
+    inventory: [
+      { id: 'sugar-1kg', name: 'Sugar', price: 45, unit: 'kg', isAvailable: true, category: 'Grocery' },
+      { id: 'rice-1kg', name: 'Rice', price: 80, unit: 'kg', isAvailable: true, category: 'Grocery' },
+      { id: 'oil-1l', name: 'Cooking Oil', price: 120, unit: 'liter', isAvailable: true, category: 'Grocery' },
+      { id: 'spices-100g', name: 'Spices', price: 25, unit: 'gram', isAvailable: true, category: 'Grocery' }
+    ]
   },
   {
     id: '2',
-    name: 'Gourmet Tools',
+    name: 'Green Grocery',
     image: '/placeholder.svg',
     rating: 4.5,
-    categories: ['Bakeware', 'Cutlery', 'Gadgets'],
-    deliveryTime: '45-60 min'
+    categories: ['Organic', 'Vegetables'],
+    deliveryTime: '45-60 min',
+    inventory: [
+      { id: 'sugar-1kg', name: 'Sugar', price: 48, unit: 'kg', isAvailable: true, category: 'Grocery' },
+      { id: 'rice-1kg', name: 'Rice', price: 85, unit: 'kg', isAvailable: true, category: 'Grocery' },
+      { id: 'oil-1l', name: 'Cooking Oil', price: 115, unit: 'liter', isAvailable: true, category: 'Grocery' }
+    ]
   },
   {
     id: '3',
-    name: 'Home Chef Supplies',
+    name: 'Quick Market',
     image: '/placeholder.svg',
     rating: 4.7,
-    categories: ['Cookware', 'Storage', 'Cleaning'],
-    deliveryTime: '25-40 min'
-  },
+    categories: ['Convenience', 'Quick Delivery'],
+    deliveryTime: '25-40 min',
+    inventory: [
+      { id: 'sugar-1kg', name: 'Sugar', price: 50, unit: 'kg', isAvailable: true, category: 'Grocery' },
+      { id: 'spices-100g', name: 'Spices', price: 30, unit: 'gram', isAvailable: true, category: 'Grocery' },
+      { id: 'knife-1pc', name: 'Kitchen Knife', price: 200, unit: 'piece', isAvailable: true, category: 'Utensils' }
+    ]
+  }
 ];
 
 const sampleDeliveryBoys: DeliveryBoy[] = [
@@ -333,6 +359,57 @@ const appSlice = createSlice({
         // Order status should only change when merchant actually submits the complete quote
       }
     },
+    autoPopulateMerchantQuote: (state, action: PayloadAction<{ orderId: string; merchantId: string }>) => {
+      const { orderId, merchantId } = action.payload;
+      const order = state.orders.find(o => o.id === orderId);
+      const merchant = state.merchants.find(m => m.id === merchantId);
+      
+      if (order && merchant) {
+        // Find existing merchant verification data or create new
+        let merchantVerificationData = order.merchantQuotes?.find(q => q.merchantId === merchantId);
+        if (!merchantVerificationData) {
+          merchantVerificationData = {
+            merchantId,
+            products: [],
+            total: 0,
+            submittedAt: '',
+            isQuoteSubmitted: false
+          };
+          order.merchantQuotes.push(merchantVerificationData);
+        }
+
+        // Auto-populate products based on merchant inventory
+        merchantVerificationData.products = order.products.map(orderProduct => {
+          // Try to find matching item in merchant inventory
+          const matchingInventoryItem = merchant.inventory.find(invItem => 
+            invItem.name.toLowerCase() === orderProduct.name.toLowerCase() &&
+            invItem.unit === orderProduct.unit
+          );
+
+          if (matchingInventoryItem) {
+            // Auto-populate with merchant's stored price and availability
+            return {
+              ...orderProduct,
+              updatedPrice: matchingInventoryItem.price,
+              isAvailable: matchingInventoryItem.isAvailable,
+              isVerified: true, // Auto-verified for matching items
+              merchantNotes: 'Auto-populated from inventory'
+            };
+          } else {
+            // Item not in inventory, needs manual verification
+            return {
+              ...orderProduct,
+              isVerified: false,
+              isAvailable: true,
+              updatedPrice: undefined,
+              merchantNotes: undefined
+            };
+          }
+        });
+
+        console.log(`🤖 AUTO-POPULATED: ${merchantVerificationData.products.filter(p => p.isVerified).length}/${merchantVerificationData.products.length} items auto-verified for merchant ${merchantId}`);
+      }
+    },
     assignDeliveryBoy: (state, action: PayloadAction<{ orderId: string; deliveryBoyId: string }>) => {
       const { orderId, deliveryBoyId } = action.payload;
       const order = state.orders.find(o => o.id === orderId);
@@ -407,6 +484,7 @@ export const {
   submitMerchantQuote,
   selectMerchantQuote,
   verifyProduct,
+  autoPopulateMerchantQuote,
   assignDeliveryBoy,
   updateDeliveryStatus,
 } = appSlice.actions;
