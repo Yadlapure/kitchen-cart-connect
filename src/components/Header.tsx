@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,7 @@ import { FaShoppingCart, FaBars, FaSignOutAlt, FaSignInAlt } from 'react-icons/f
 import { MapPin, ChevronDown, User, Settings } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import LocationSelector from './LocationSelector';
+import { toast } from 'sonner';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -30,8 +30,22 @@ const Header = () => {
   };
 
   const handleCartClick = () => {
-    console.log('Cart button clicked, navigating to /request');
-    navigate('/request');
+    console.log('Cart button clicked');
+    
+    if (cart.length === 0) {
+      toast.error("Your cart is empty. Add some items first!");
+      navigate('/request');
+      return;
+    }
+    
+    if (!isAuthenticated) {
+      console.log('User not authenticated, redirecting to login');
+      navigate('/login?redirect=' + encodeURIComponent('/merchants'));
+      return;
+    }
+    
+    console.log('User authenticated, navigating to merchants');
+    navigate('/merchants');
   };
 
   const handleLocationSelect = (location: string) => {
